@@ -575,7 +575,7 @@ namespace NvidiaCS2Toggle
             _icon = new NotifyIcon
             {
                 Icon = MakeIcon(),
-                Text = "NVIDIA CS2 Toggle",
+                Text = "CS2 Res Tweaker",
                 Visible = true,
                 ContextMenuStrip = _menu
             };
@@ -736,7 +736,7 @@ namespace NvidiaCS2Toggle
 
         public SettingsForm()
         {
-            Text = "Configuracion - NVIDIA CS2 Toggle";
+            Text = "Configuracion - CS2 Res Tweaker";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterScreen;
             MaximizeBox = false; MinimizeBox = false;

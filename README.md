@@ -1,4 +1,4 @@
-# NVIDIA CS2 Toggle
+# CS2 Res Tweaker
 
 App diminuta de bandeja del sistema (Windows) para alternar entre dos perfiles
 cambiando **resolución** y **Digital Vibrance** de NVIDIA — pensada para activar
@@ -8,7 +8,7 @@ Los cambios se aplican **solo al monitor que elijas** como "Monitor de juego".
 
 ## Descargar y usar (portable)
 
-1. Descarga `CS2Toggle.exe` desde [Releases](../../releases) (o compílalo, ver abajo).
+1. Descarga `CS2ResTweaker.exe` desde [Releases](../../releases) (o compílalo, ver abajo).
 2. Doble clic. Aparece un icono verde **CS** en la bandeja (zona oculta de la barra de tareas).
 3. **Clic** en el icono → menú:
    - **Modo CS2** / **Modo Normal** — aplica resolución + vibrance (el perfil activo lleva ✓).
@@ -43,7 +43,7 @@ No necesitas Visual Studio ni el SDK de .NET — Windows ya trae el compilador:
 .\build.ps1
 ```
 
-Genera `CS2Toggle.exe`.
+Genera `CS2ResTweaker.exe`.
 
 ## Licencia
 
