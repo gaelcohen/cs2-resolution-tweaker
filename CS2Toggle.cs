@@ -660,7 +660,7 @@ namespace NvidiaCS2Toggle
         }
 
         // Usa el icono incrustado en el .exe (icon.ico via /win32icon). Sin archivo suelto.
-        static Icon MakeIcon()
+        public static Icon MakeIcon()
         {
             try { return Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
             catch { return SystemIcons.Application; }
@@ -840,6 +840,9 @@ namespace NvidiaCS2Toggle
             Font = new Font("Segoe UI", 9f);
             ClientSize = new Size(320, 362);
             Padding = new Padding(1); // espacio para el borde de acento
+            Text = "CS2 Res Tweaker";       // etiqueta en la barra de tareas
+            Icon = TrayApp.MakeIcon();       // icono de la app en la barra de tareas
+            ShowInTaskbar = true;
 
             BuildTitleBar();
 
