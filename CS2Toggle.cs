@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -141,33 +141,33 @@ namespace NvidiaCS2Toggle
         {
             { "modeCs2",       new[]{ "Modo CS2", "CS2 Mode" } },
             { "modeNormal",    new[]{ "Modo Normal", "Normal Mode" } },
-            { "settings",      new[]{ "Configuracion...", "Settings..." } },
+            { "settings",      new[]{ "Configuración...", "Settings..." } },
             { "startup",       new[]{ "Iniciar con Windows", "Start with Windows" } },
             { "quit",          new[]{ "Salir", "Quit" } },
             { "gamingMonitor", new[]{ "Monitor de juego", "Gaming monitor" } },
-            { "resolution",    new[]{ "Resolucion", "Resolution" } },
-            { "color",         new[]{ "Color", "Color" } },
+            { "resolution",    new[]{ "Resolución", "Resolution" } },
+            { "color",         new[]{ "Digital Vibrance", "Digital Vibrance" } },
             { "language",      new[]{ "Idioma", "Language" } },
             { "save",          new[]{ "Guardar", "Save" } },
             { "cancel",        new[]{ "Cancelar", "Cancel" } },
             { "primary",       new[]{ "  (principal)", "  (primary)" } },
             { "activeFmt",     new[]{ "{0} activado", "{0} active" } },
-            { "partialFmt",    new[]{ "{0}: se aplico solo en parte", "{0}: only partially applied" } },
-            { "bodyFmt",       new[]{ "{0}: {1}x{2}  |  Color {3}%", "{0}: {1}x{2}  |  Color {3}%" } },
+            { "partialFmt",    new[]{ "{0}: se aplicó solo en parte", "{0}: only partially applied" } },
+            { "bodyFmt",       new[]{ "{0}: {1}x{2}  |  Vibrance {3}%", "{0}: {1}x{2}  |  Vibrance {3}%" } },
             { "startupTitle",  new[]{ "Iniciar con Windows", "Start with Windows" } },
-            { "errStartup",    new[]{ "No se pudo cambiar el inicio automatico con Windows.", "Couldn't change the start-with-Windows setting." } },
-            { "errReadDisplay",new[]{ "No se pudo leer la configuracion de tu pantalla.", "Couldn't read your display settings." } },
-            { "errResolution", new[]{ "Tu monitor no acepto la resolucion {0}x{1}. Si la quieres usar, creala en el Panel de Control de NVIDIA (Cambiar resolucion -> Personalizar) y vuelve a intentarlo.",
+            { "errStartup",    new[]{ "No se pudo cambiar el inicio automático con Windows.", "Couldn't change the start-with-Windows setting." } },
+            { "errReadDisplay",new[]{ "No se pudo leer la configuración de tu pantalla.", "Couldn't read your display settings." } },
+            { "errResolution", new[]{ "Tu monitor no aceptó la resolución {0}x{1}. Si la quieres usar, créala en el Panel de Control de NVIDIA (Cambiar resolución -> Personalizar) y vuelve a intentarlo.",
                                       "Your monitor didn't accept {0}x{1}. To use it, create it in the NVIDIA Control Panel (Change resolution -> Customize) and try again." } },
-            { "errNoNvidia",   new[]{ "No se detecto una tarjeta grafica NVIDIA (o faltan sus drivers). El ajuste de color solo funciona con NVIDIA.",
-                                      "No NVIDIA graphics card detected (or drivers are missing). Color adjustment only works on NVIDIA." } },
-            { "errNvFuncs",    new[]{ "Tus drivers NVIDIA no permiten ajustar el color. Prueba actualizarlos.",
-                                      "Your NVIDIA drivers don't allow color adjustment. Try updating them." } },
+            { "errNoNvidia",   new[]{ "No se detectó una tarjeta gráfica NVIDIA (o faltan sus drivers). El ajuste de Digital Vibrance solo funciona con NVIDIA.",
+                                      "No NVIDIA graphics card detected (or drivers are missing). Digital Vibrance adjustment only works on NVIDIA." } },
+            { "errNvFuncs",    new[]{ "Tus drivers NVIDIA no permiten ajustar el Digital Vibrance. Prueba actualizarlos.",
+                                      "Your NVIDIA drivers don't allow Digital Vibrance adjustment. Try updating them." } },
             { "errNvInit",     new[]{ "No se pudo conectar con la tarjeta NVIDIA. Prueba reiniciar o actualizar los drivers.",
                                       "Couldn't connect to the NVIDIA card. Try restarting or updating the drivers." } },
-            { "errMonNotNvidia",new[]{ "El monitor elegido no esta conectado a la tarjeta NVIDIA. Conectalo a la NVIDIA o elige otro monitor en Configuracion.",
+            { "errMonNotNvidia",new[]{ "El monitor elegido no está conectado a la tarjeta NVIDIA. Conéctalo a la NVIDIA o elige otro monitor en Configuración.",
                                        "The chosen monitor isn't connected to the NVIDIA card. Connect it to the NVIDIA GPU or pick another monitor in Settings." } },
-            { "errVibGeneric", new[]{ "No se pudo cambiar el color (vibrance) de la pantalla.", "Couldn't change the screen color (vibrance)." } },
+            { "errVibGeneric", new[]{ "No se pudo cambiar el Digital Vibrance de la pantalla.", "Couldn't change the screen's Digital Vibrance." } },
         };
     }
 
@@ -1019,7 +1019,7 @@ namespace NvidiaCS2Toggle
 
             AddLabel(L.T("language"), 16, 52);
             _lang = MakeCombo(120, 48, 160);
-            _lang.Items.Add("Espanol"); _lang.Items.Add("English");
+            _lang.Items.Add("Español"); _lang.Items.Add("English");
             _lang.SelectedIndex = L.IsEn ? 1 : 0;
             _lang.SelectedIndexChanged += (s, e) =>
             {
@@ -1041,13 +1041,13 @@ namespace NvidiaCS2Toggle
             AddLabel(L.T("resolution"), 16, 180);
             _cRes = MakeCombo(110, 176, 150);
             AddLabel(L.T("color"), 16, 212);
-            _cVib = AddVib(90, 206, Settings.Cs2Vib);
+            _cVib = AddVib(132, 206, Settings.Cs2Vib);
 
             AddHeader(L.T("modeNormal"), 254);
             AddLabel(L.T("resolution"), 16, 282);
             _nRes = MakeCombo(110, 278, 150);
             AddLabel(L.T("color"), 16, 314);
-            _nVib = AddVib(90, 308, Settings.NorVib);
+            _nVib = AddVib(132, 308, Settings.NorVib);
 
             var ok = MakeButton(L.T("save"), DialogResult.OK, true);
             ok.Left = 138; ok.Top = 356; ok.Click += (s, e) => SaveAll();
@@ -1137,8 +1137,8 @@ namespace NvidiaCS2Toggle
 
         Slider AddVib(int x, int y, int val)
         {
-            var t = new Slider { Left = x, Top = y, Width = 170, Value = val };
-            var num = new Label { Left = x + 178, Top = y + 4, AutoSize = true, ForeColor = Theme.Accent,
+            var t = new Slider { Left = x, Top = y, Width = 130, Value = val };
+            var num = new Label { Left = x + 138, Top = y + 4, AutoSize = true, ForeColor = Theme.Accent,
                                   Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Text = val.ToString() };
             t.ValueChanged += (s, e) => num.Text = t.Value.ToString();
             Controls.Add(t); Controls.Add(num);
