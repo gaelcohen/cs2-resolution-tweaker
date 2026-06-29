@@ -730,7 +730,7 @@ namespace NvidiaCS2Toggle
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
-                using (var b = new SolidBrush(Color.FromArgb(118, 185, 0))) // verde NVIDIA
+                using (var b = new SolidBrush(Theme.Accent))
                     g.FillEllipse(b, 0, 0, 31, 31);
                 using (var f = new Font("Segoe UI", 11, FontStyle.Bold))
                 using (var tb = new SolidBrush(Color.Black))
@@ -762,8 +762,8 @@ namespace NvidiaCS2Toggle
         public static readonly Color Bg      = Color.FromArgb(30, 30, 30);
         public static readonly Color Panel   = Color.FromArgb(45, 45, 48);
         public static readonly Color Text    = Color.FromArgb(222, 222, 222);
-        public static readonly Color Accent  = Color.FromArgb(118, 185, 0);   // verde NVIDIA
-        public static readonly Color AccentH = Color.FromArgb(140, 210, 20);
+        public static readonly Color Accent  = Color.FromArgb(255, 140, 0);   // naranja
+        public static readonly Color AccentH = Color.FromArgb(255, 165, 40);
         public static readonly Color Border  = Color.FromArgb(63, 63, 70);
         public static readonly Color Hover   = Color.FromArgb(58, 58, 61);
         public static readonly Color Track   = Color.FromArgb(74, 74, 74);
