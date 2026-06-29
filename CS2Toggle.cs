@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -705,7 +706,8 @@ namespace NvidiaCS2Toggle
             y = AddSep(y, w);
             y = AddRow("Salir", false, () => { Close(); _app.ExitApp(); }, y, w);
 
-            ClientSize = new Size(w, y + 6);
+            ClientSize = new Size(w, y + 8);
+            UI.Round(this, 14);
         }
 
         int AddRow(string text, bool active, Action onClick, int y, int w)
@@ -713,22 +715,23 @@ namespace NvidiaCS2Toggle
             var b = new Button
             {
                 Text = (active ? "✓   " : "       ") + text, // tick naranja si esta activo
-                Left = 6, Top = y, Width = w - 12, Height = 32,
+                Left = 8, Top = y, Width = w - 16, Height = 34,
                 FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft,
                 BackColor = Theme.Bg, ForeColor = active ? Theme.Accent : Theme.Text,
-                Padding = new Padding(8, 0, 0, 0), TabStop = false, Cursor = Cursors.Hand
+                Padding = new Padding(12, 0, 0, 0), TabStop = false, Cursor = Cursors.Hand
             };
             b.FlatAppearance.BorderSize = 0;
             b.FlatAppearance.MouseOverBackColor = Theme.Hover;
             b.Click += (s, e) => onClick();
             Controls.Add(b);
-            return y + 32;
+            UI.Round(b, 9); // fila tipo pildora
+            return y + 36;
         }
 
         int AddSep(int y, int w)
         {
-            Controls.Add(new Panel { Left = 12, Top = y + 4, Width = w - 24, Height = 1, BackColor = Theme.Border });
-            return y + 9;
+            Controls.Add(new Panel { Left = 16, Top = y + 4, Width = w - 32, Height = 1, BackColor = Theme.Border });
+            return y + 10;
         }
 
         public void ShowAtCursor()
@@ -751,8 +754,10 @@ namespace NvidiaCS2Toggle
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            using (var pen = new Pen(Theme.Accent))
-                e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var path = UI.RoundRect(new Rectangle(0, 0, Width - 1, Height - 1), 14))
+            using (var pen = new Pen(Theme.Accent, 1.4f))
+                e.Graphics.DrawPath(pen, path);
         }
     }
 
@@ -769,6 +774,30 @@ namespace NvidiaCS2Toggle
         public static readonly Color Border  = Color.FromArgb(30, 91, 168);
         public static readonly Color Hover   = Color.FromArgb(10, 79, 158);
         public static readonly Color Track   = Color.FromArgb(20, 54, 95);
+    }
+
+    // Helpers de esquinas redondeadas (look moderno).
+    static class UI
+    {
+        public static GraphicsPath RoundRect(Rectangle r, int radius)
+        {
+            int d = radius * 2;
+            if (d > r.Width) d = r.Width;
+            if (d > r.Height) d = r.Height;
+            var p = new GraphicsPath();
+            p.AddArc(r.X, r.Y, d, d, 180, 90);
+            p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+            p.CloseFigure();
+            return p;
+        }
+
+        public static void Round(Control c, int radius)
+        {
+            using (var p = RoundRect(new Rectangle(0, 0, c.Width, c.Height), radius))
+                c.Region = new Region(p);
+        }
     }
 
     // Slider 0-100 dibujado a mano (el TrackBar nativo no se puede tematizar).
@@ -878,6 +907,8 @@ namespace NvidiaCS2Toggle
             int idx = 0;
             for (int i = 0; i < _monitors.Count; i++) if (_monitors[i].Device == dev) idx = i;
             if (_monitors.Count > 0) _mon.SelectedIndex = idx; else OnMonitorChanged();
+
+            UI.Round(this, 16);
         }
 
         void OnMonitorChanged()
@@ -925,8 +956,10 @@ namespace NvidiaCS2Toggle
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            using (var p = new Pen(Theme.Border)) // borde 1px alrededor
-                e.Graphics.DrawRectangle(p, 0, 0, Width - 1, Height - 1);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var path = UI.RoundRect(new Rectangle(0, 0, Width - 1, Height - 1), 16))
+            using (var pen = new Pen(Theme.Accent, 1.4f)) // borde de acento redondeado
+                e.Graphics.DrawPath(pen, path);
         }
 
         void AddHeader(string text, int y)
@@ -974,6 +1007,7 @@ namespace NvidiaCS2Toggle
                                  ForeColor = accent ? Color.Black : Theme.Text };
             b.FlatAppearance.BorderColor = accent ? Theme.Accent : Theme.Border;
             b.FlatAppearance.MouseOverBackColor = accent ? Theme.AccentH : Theme.Hover;
+            UI.Round(b, 8); // boton tipo pildora
             return b;
         }
 
