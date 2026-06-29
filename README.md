@@ -3,9 +3,9 @@ ONLY AVAILABLE FOR NVIDIA GRAPHICS.
 
 [Español](#español) · [English](#english)
 
-Built for **Counter-Strike 2**. Switch between your competitive setup (stretched resolution + high NVIDIA Digital Vibrance) and your normal desktop with a single click. It's a lightweight Windows tray app that only changes the monitor you choose.
-
 Diseñado para **Counter-Strike 2**. Activa tu configuración competitiva (resolución estirada + Digital Vibrance alto de NVIDIA) y vuelve a tu escritorio normal con un solo clic. Es una aplicación ligera para la bandeja del sistema que solo modifica el monitor que elijas.
+
+Built for **Counter-Strike 2**. Switch between your competitive setup (stretched resolution + high NVIDIA Digital Vibrance) and your normal desktop with a single click. It's a lightweight Windows tray app that only changes the monitor you choose.
 
 
 ---
