@@ -659,24 +659,11 @@ namespace NvidiaCS2Toggle
             _icon.ShowBalloonTip(3000);
         }
 
-        // Genera un icono simple "CS" sin necesitar un archivo .ico.
+        // Usa el icono incrustado en el .exe (icon.ico via /win32icon). Sin archivo suelto.
         static Icon MakeIcon()
         {
-            var bmp = new Bitmap(32, 32);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.Clear(Color.Transparent);
-                using (var b = new SolidBrush(Theme.Accent))
-                    g.FillEllipse(b, 0, 0, 31, 31);
-                using (var f = new Font("Segoe UI", 11, FontStyle.Bold))
-                using (var tb = new SolidBrush(Color.Black))
-                {
-                    var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString("CS", f, tb, new RectangleF(0, 0, 32, 32), sf);
-                }
-            }
-            return Icon.FromHandle(bmp.GetHicon());
+            try { return Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
+            catch { return SystemIcons.Application; }
         }
 
         void Exit()
