@@ -1,106 +1,157 @@
-# CS2 Res Tweaker
+# CS2 Resolution Tweaker
+ONLY AVAILABLE FOR NVIDIA GRAPHICS.
 
 [Español](#español) · [English](#english)
 
-Hecho para **Counter-Strike 2**: con un clic activas el setup competitivo (resolución estirada + Digital Vibrance alto de NVIDIA) y vuelves a tu escritorio normal cuando terminas. App ligera de bandeja para Windows que aplica los cambios solo al monitor que elijas.
+Built for **Counter-Strike 2**. Switch between your competitive setup (stretched resolution + high NVIDIA Digital Vibrance) and your normal desktop with a single click. It's a lightweight Windows tray app that only changes the monitor you choose.
 
-Built for **Counter-Strike 2**: one click flips on the competitive setup (stretched resolution + high NVIDIA Digital Vibrance) and back to your normal desktop when you're done. A lightweight Windows tray app that changes only the monitor you pick.
+Diseñado para **Counter-Strike 2**. Activa tu configuración competitiva (resolución estirada + Digital Vibrance alto de NVIDIA) y vuelve a tu escritorio normal con un solo clic. Es una aplicación ligera para la bandeja del sistema que solo modifica el monitor que elijas.
 
-> Probado en / Tested on: **NVIDIA RTX 3090, Windows 11**.
 
 ---
 
-## Español
+# Español
 
-### Descargar y usar
-1. Descarga `CS2ResTweaker.exe` desde la pestaña **[Releases](../../releases)**.
-2. Doble clic. Aparece el icono de la app en la bandeja del sistema (zona junto al reloj; puede estar en la flecha **⌃** de iconos ocultos).
-3. **Clic** en el icono y se abre un menú propio:
-   - **Modo CS2** / **Modo Normal**: aplica la resolución + Digital Vibrance de ese perfil. El activo lleva un ✓.
-   - **Configuración…**: elige el monitor de juego y edita la resolución y el Digital Vibrance de cada perfil.
-   - **Iniciar con Windows**: arranca solo al iniciar sesión.
-   - **Salir**.
+## Descargar
 
-Es **portable**: un único `.exe`, sin instalador y sin dependencias (usa el .NET Framework incluido en Windows 10/11). No necesita permisos de administrador. Tu configuración se guarda en `config.txt`, junto al `.exe`.
+1. Descarga `CS2ResTweaker.exe` desde **[Releases](../../releases)**.
+2. Haz doble clic para abrirlo.
+3. Encontrarás el icono en la bandeja del sistema (junto al reloj, o dentro del menú **⌃** de iconos ocultos).
+4. Haz clic sobre el icono para abrir el menú:
 
-### Configuración
-Abre **Configuración…** desde el menú:
-- **Monitor de juego**: a qué monitor se le aplican los cambios.
-- **Resolución**: lista desplegable con las resoluciones que tu monitor soporta (se detectan solas). Las resoluciones personalizadas que crees en el Panel de NVIDIA también aparecen aquí.
-- **Digital Vibrance**: barra de 0 a 100. En la escala de NVIDIA, **50 = neutro** y **100 = máximo**.
-- **Idioma**: Español o English. La app se reabre en el idioma elegido.
+* **Modo CS2** / **Modo Normal**: cambia la resolución y el Digital Vibrance según el perfil seleccionado. El perfil activo aparece con un ✓.
+* **Configuración...**: selecciona el monitor de juego y personaliza la resolución y el Digital Vibrance de ambos perfiles.
+* **Iniciar con Windows**.
+* **Salir**.
 
-Valores por defecto: CS2 a 1440×1080 al 100% · Normal a 2560×1440 al 50%.
+La aplicación es completamente **portable**. Solo necesitas un único `.exe`: no requiere instalación, dependencias ni permisos de administrador. Toda la configuración se guarda en `config.txt`, junto al ejecutable.
 
-### Requisitos
-- Windows 10 u 11. *(Las esquinas redondeadas son de Windows 11; en Windows 10 funciona igual pero con ventanas rectas.)*
-- Para el **Digital Vibrance**: tarjeta gráfica **NVIDIA** con drivers instalados, y el monitor de juego conectado a esa NVIDIA.
-- El **cambio de resolución** funciona en cualquier equipo.
+## Configuración
 
-> **Solo NVIDIA por ahora.** El cambio de resolución sirve en cualquier GPU, pero el Digital Vibrance usa la librería de NVIDIA. Soporte para AMD (Radeon) o Intel podría añadirse más adelante.
+Desde **Configuración...** puedes cambiar:
 
-### Mensajes de error (qué significan)
-Aparecen como una notificación de Windows:
-- **"No se detectó una tarjeta gráfica NVIDIA…"**: no tienes NVIDIA o faltan drivers. La resolución igual cambia; solo el Digital Vibrance no.
-- **"El monitor elegido no está conectado a la tarjeta NVIDIA…"**: ese monitor cuelga de la gráfica integrada. Conéctalo a la NVIDIA o elige otro en Configuración.
-- **"Tu monitor no aceptó la resolución…"**: esa resolución no está disponible. Créala en *Panel NVIDIA → Cambiar resolución → Personalizar* (para CS2, pon el escalado en "Pantalla completa").
-- **"Modo … se aplicó solo en parte"**: una parte funcionó y la otra no; el detalle indica cuál.
+* **Monitor de juego**: el monitor al que se aplicarán los cambios.
+* **Resolución**: muestra automáticamente todas las resoluciones compatibles con tu monitor, incluidas las resoluciones personalizadas creadas desde el Panel de Control de NVIDIA.
+* **Digital Vibrance**: deslizador entre 0 y 100. En NVIDIA, **50** es el valor neutro y **100** el máximo.
+* **Idioma**: Español o English. La aplicación se reinicia automáticamente al cambiarlo.
 
-### Compilar desde el código
-No necesitas Visual Studio ni el SDK de .NET, Windows ya trae el compilador:
+Configuración predeterminada:
+
+* **CS2:** 1440×1080 al 100%
+* **Normal:** 2560×1440 al 50%
+
+## Requisitos
+
+* Windows 10 u 11.
+* Para controlar el **Digital Vibrance**, necesitas una GPU NVIDIA con sus drivers instalados y el monitor conectado directamente a esa GPU.
+* El cambio de resolución funciona con cualquier tarjeta gráfica.
+
+> Actualmente solo el Digital Vibrance es compatible con NVIDIA. El cambio de resolución funciona con cualquier GPU. El soporte para AMD e Intel podría añadirse más adelante.
+
+## Mensajes de error
+
+Las advertencias aparecen como notificaciones de Windows.
+
+**No se detectó una tarjeta gráfica NVIDIA...**
+
+No hay una GPU NVIDIA disponible o los drivers no están instalados. La resolución seguirá cambiando normalmente; únicamente fallará el Digital Vibrance.
+
+**El monitor elegido no está conectado a la tarjeta NVIDIA...**
+
+El monitor seleccionado está conectado a la GPU integrada. Conéctalo a la tarjeta NVIDIA o elige otro monitor desde Configuración.
+
+**Tu monitor no aceptó la resolución...**
+
+La resolución no está disponible. Puedes crearla desde **Panel de Control de NVIDIA → Cambiar resolución → Personalizar**. Para CS2 se recomienda usar el escalado en **Pantalla completa**.
+
+**Modo ... se aplicó solo en parte**
+
+Uno de los cambios se aplicó correctamente y el otro no. La notificación indica cuál fue el problema.
+
+## Compilar desde el código
+
+No necesitas Visual Studio ni instalar el .NET SDK. Windows ya incluye el compilador necesario.
+
 ```powershell
 .\build.ps1
 ```
-Genera `CS2ResTweaker.exe` (el icono se toma de `icon.ico`). El código fuente está en UTF-8 con BOM para que los acentos compilen bien.
+
+El script genera `CS2ResTweaker.exe` utilizando `icon.ico` como icono. El código fuente está guardado en UTF-8 con BOM para evitar problemas con caracteres acentuados.
 
 ---
 
-## English
+# English
 
-### Download & use
-1. Download `CS2ResTweaker.exe` from the **[Releases](../../releases)** tab.
-2. Double-click it. The app icon appears in the system tray (near the clock; it may be under the hidden-icons **⌃** arrow).
-3. **Click** the icon and a custom menu opens:
-   - **Modo CS2** / **Modo Normal**: applies that profile's resolution + Digital Vibrance. The active one shows a ✓.
-   - **Configuración…** (Settings): pick the gaming monitor and edit each profile's resolution and Digital Vibrance.
-   - **Iniciar con Windows**: start automatically at login.
-   - **Salir**: quit.
+## Download
 
-It's **portable**: a single `.exe`, no installer, no dependencies (it uses the .NET Framework built into Windows 10/11). No admin rights needed. Your settings are stored in `config.txt`, next to the `.exe`.
+1. Download `CS2ResTweaker.exe` from **[Releases](../../releases)**.
+2. Double-click it.
+3. The app will appear in the Windows system tray (next to the clock, or under the **⌃** hidden icons menu).
+4. Click the icon to open the menu.
 
-> The UI defaults to Spanish. Switch it to **English** in *Configuración → Idioma (Language)* and the app reopens translated.
+* **CS2 Mode** / **Normal Mode**: switches to the selected profile's resolution and Digital Vibrance settings. The active profile is marked with ✓.
+* **Settings...**: choose your gaming monitor and customize both profiles.
+* **Start with Windows**.
+* **Exit**.
 
-### Settings
-Open **Configuración…** (Settings) from the menu:
-- **Gaming monitor**: which monitor the changes apply to.
-- **Resolution**: a dropdown of the resolutions your monitor actually supports (auto-detected). Custom resolutions you create in the NVIDIA Control Panel show up here too.
-- **Digital Vibrance**: a 0 to 100 slider. On NVIDIA's scale, **50 = neutral** and **100 = maximum**.
-- **Language**: Spanish or English. The app reopens in the chosen language.
+The app is completely **portable**. It's just a single `.exe`, with no installer, no dependencies and no administrator privileges required. Your settings are stored in `config.txt` next to the executable.
 
-Defaults: CS2 at 1440×1080 / 100% · Normal at 2560×1440 / 50%.
+> The interface starts in Spanish by default. You can switch to English from **Settings → Language**. The app will restart automatically.
 
-### Requirements
-- Windows 10 or 11. *(Rounded corners are a Windows 11 feature; on Windows 10 it works the same but with square windows.)*
-- For **Digital Vibrance**: an **NVIDIA** GPU with drivers installed, and the gaming monitor connected to that NVIDIA card.
-- **Resolution switching** works on any PC.
+## Settings
 
-> **NVIDIA only for now.** Resolution switching works on any GPU, but Digital Vibrance uses NVIDIA's library. AMD (Radeon) / Intel support may be added later.
+Inside **Settings...** you can configure:
 
-### Error messages (what they mean)
-Shown as a Windows notification:
-- **"No NVIDIA graphics card detected…"**: no NVIDIA or missing drivers. Resolution still changes; only Digital Vibrance doesn't.
-- **"The chosen monitor isn't connected to the NVIDIA card…"**: that monitor runs off the integrated GPU. Connect it to the NVIDIA card or pick another in Settings.
-- **"Your monitor didn't accept the resolution…"**: that resolution isn't available. Create it in *NVIDIA Control Panel → Change resolution → Customize* (for CS2, set scaling to "Full-screen").
-- **"Mode … was only partially applied"**: one part worked and the other didn't; the detail says which.
+* **Gaming monitor**.
+* **Resolution**: automatically lists every resolution supported by your monitor, including custom resolutions created in the NVIDIA Control Panel.
+* **Digital Vibrance**: slider from 0 to 100. On NVIDIA, **50** is neutral and **100** is the maximum.
+* **Language**: Spanish or English.
 
-### Build from source
-No Visual Studio or .NET SDK needed, Windows ships the compiler:
+Default values:
+
+* **CS2:** 1440×1080 at 100%
+* **Normal:** 2560×1440 at 50%
+
+## Requirements
+
+* Windows 10 or Windows 11.
+* Digital Vibrance requires an NVIDIA GPU with drivers installed, and the gaming monitor connected directly to that GPU.
+* Resolution switching works with any graphics card.
+
+> At the moment, only Digital Vibrance is NVIDIA-only. Resolution switching works on any GPU. AMD and Intel support may be added in the future.
+
+## Error messages
+
+Errors are shown as standard Windows notifications.
+
+**No NVIDIA graphics card detected...**
+
+No NVIDIA GPU was found or the drivers are missing. Resolution switching will still work, but Digital Vibrance won't.
+
+**The selected monitor isn't connected to the NVIDIA GPU...**
+
+That monitor is connected to the integrated graphics instead of the NVIDIA card. Connect it to the NVIDIA GPU or select another monitor.
+
+**Your monitor didn't accept the resolution...**
+
+The selected resolution isn't available. Create it from **NVIDIA Control Panel → Change Resolution → Customize**. For CS2, Full-screen scaling is recommended.
+
+**Mode ... was only partially applied**
+
+One setting was applied successfully while the other failed. The notification explains which one.
+
+## Build from source
+
+No Visual Studio or .NET SDK is required. Windows already includes everything needed.
+
 ```powershell
 .\build.ps1
 ```
-Produces `CS2ResTweaker.exe` (icon taken from `icon.ico`). The source is UTF-8 with BOM so accented characters compile correctly.
+
+The script builds `CS2ResTweaker.exe` and uses `icon.ico` as the application icon. The source files are encoded as UTF-8 with BOM to ensure accented characters compile correctly.
 
 ---
 
-## Licencia / License
-MIT, see [LICENSE](LICENSE).
+# License
+
+MIT. See [LICENSE](LICENSE).
