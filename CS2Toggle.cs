@@ -82,6 +82,12 @@ namespace NvidiaCS2Toggle
             set { D["monitor"] = value ?? ""; }
         }
 
+        public static string Language
+        {
+            get { string v; return D.TryGetValue("lang", out v) ? v : "es"; }
+            set { D["lang"] = value ?? "es"; }
+        }
+
         // Perfil CS2 (defaults los valores que pediste)
         public static int Cs2W   { get { return GetI("cs2.w", 1440); }   set { SetI("cs2.w", value); } }
         public static int Cs2H   { get { return GetI("cs2.h", 1080); }   set { SetI("cs2.h", value); } }
@@ -119,6 +125,50 @@ namespace NvidiaCS2Toggle
                 else k.DeleteValue(Name, false);
             }
         }
+    }
+
+    // -----------------------------------------------------------------------
+    //  Idioma (ES/EN). Texto = M[clave][0]=es, [1]=en.
+    // -----------------------------------------------------------------------
+    static class L
+    {
+        static string lang = "es";
+        public static void Load() { lang = (Settings.Language == "en") ? "en" : "es"; }
+        public static bool IsEn { get { return lang == "en"; } }
+        public static string T(string key) { string[] v; return M.TryGetValue(key, out v) ? (lang == "en" ? v[1] : v[0]) : key; }
+
+        static readonly Dictionary<string, string[]> M = new Dictionary<string, string[]>
+        {
+            { "modeCs2",       new[]{ "Modo CS2", "CS2 Mode" } },
+            { "modeNormal",    new[]{ "Modo Normal", "Normal Mode" } },
+            { "settings",      new[]{ "Configuracion...", "Settings..." } },
+            { "startup",       new[]{ "Iniciar con Windows", "Start with Windows" } },
+            { "quit",          new[]{ "Salir", "Quit" } },
+            { "gamingMonitor", new[]{ "Monitor de juego", "Gaming monitor" } },
+            { "resolution",    new[]{ "Resolucion", "Resolution" } },
+            { "color",         new[]{ "Color", "Color" } },
+            { "language",      new[]{ "Idioma", "Language" } },
+            { "save",          new[]{ "Guardar", "Save" } },
+            { "cancel",        new[]{ "Cancelar", "Cancel" } },
+            { "primary",       new[]{ "  (principal)", "  (primary)" } },
+            { "activeFmt",     new[]{ "{0} activado", "{0} active" } },
+            { "partialFmt",    new[]{ "{0}: se aplico solo en parte", "{0}: only partially applied" } },
+            { "bodyFmt",       new[]{ "{0}: {1}x{2}  |  Color {3}%", "{0}: {1}x{2}  |  Color {3}%" } },
+            { "startupTitle",  new[]{ "Iniciar con Windows", "Start with Windows" } },
+            { "errStartup",    new[]{ "No se pudo cambiar el inicio automatico con Windows.", "Couldn't change the start-with-Windows setting." } },
+            { "errReadDisplay",new[]{ "No se pudo leer la configuracion de tu pantalla.", "Couldn't read your display settings." } },
+            { "errResolution", new[]{ "Tu monitor no acepto la resolucion {0}x{1}. Si la quieres usar, creala en el Panel de Control de NVIDIA (Cambiar resolucion -> Personalizar) y vuelve a intentarlo.",
+                                      "Your monitor didn't accept {0}x{1}. To use it, create it in the NVIDIA Control Panel (Change resolution -> Customize) and try again." } },
+            { "errNoNvidia",   new[]{ "No se detecto una tarjeta grafica NVIDIA (o faltan sus drivers). El ajuste de color solo funciona con NVIDIA.",
+                                      "No NVIDIA graphics card detected (or drivers are missing). Color adjustment only works on NVIDIA." } },
+            { "errNvFuncs",    new[]{ "Tus drivers NVIDIA no permiten ajustar el color. Prueba actualizarlos.",
+                                      "Your NVIDIA drivers don't allow color adjustment. Try updating them." } },
+            { "errNvInit",     new[]{ "No se pudo conectar con la tarjeta NVIDIA. Prueba reiniciar o actualizar los drivers.",
+                                      "Couldn't connect to the NVIDIA card. Try restarting or updating the drivers." } },
+            { "errMonNotNvidia",new[]{ "El monitor elegido no esta conectado a la tarjeta NVIDIA. Conectalo a la NVIDIA o elige otro monitor en Configuracion.",
+                                       "The chosen monitor isn't connected to the NVIDIA card. Connect it to the NVIDIA GPU or pick another monitor in Settings." } },
+            { "errVibGeneric", new[]{ "No se pudo cambiar el color (vibrance) de la pantalla.", "Couldn't change the screen color (vibrance)." } },
+        };
     }
 
     // -----------------------------------------------------------------------
@@ -387,7 +437,7 @@ namespace NvidiaCS2Toggle
 
             if (!EnumDisplaySettings(device, ENUM_CURRENT_SETTINGS, ref dm))
             {
-                error = "No se pudo leer la configuracion de tu pantalla.";
+                error = L.T("errReadDisplay");
                 return false;
             }
 
@@ -401,10 +451,7 @@ namespace NvidiaCS2Toggle
             int result = ChangeDisplaySettingsEx(device, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY, IntPtr.Zero);
             if (result != DISP_CHANGE_SUCCESSFUL)
             {
-                error = string.Format("Tu monitor no acepto la resolucion {0}x{1}. " +
-                                      "Si la quieres usar, creala en el Panel de Control de NVIDIA " +
-                                      "(Cambiar resolucion -> Personalizar) y vuelve a intentarlo.",
-                                      width, height);
+                error = string.Format(L.T("errResolution"), width, height);
                 return false;
             }
             return true;
@@ -485,20 +532,19 @@ namespace NvidiaCS2Toggle
             }
             catch (DllNotFoundException)
             {
-                error = "No se detecto una tarjeta grafica NVIDIA (o faltan sus drivers). " +
-                        "El ajuste de color solo funciona con NVIDIA.";
+                error = L.T("errNoNvidia");
                 return false;
             }
 
             if (init == null || enumDisp == null || getInfo == null || setLevel == null)
             {
-                error = "Tus drivers NVIDIA no permiten ajustar el color. Prueba actualizarlos.";
+                error = L.T("errNvFuncs");
                 return false;
             }
 
             if (init() != 0)
             {
-                error = "No se pudo conectar con la tarjeta NVIDIA. Prueba reiniciar o actualizar los drivers.";
+                error = L.T("errNvInit");
                 return false;
             }
 
@@ -547,10 +593,7 @@ namespace NvidiaCS2Toggle
 
                 if (!anyOk)
                 {
-                    error = (filter && !matched)
-                        ? "El monitor elegido no esta conectado a la tarjeta NVIDIA. " +
-                          "Conectalo a la NVIDIA o elige otro monitor en Configuracion."
-                        : "No se pudo cambiar el color (vibrance) de la pantalla.";
+                    error = (filter && !matched) ? L.T("errMonNotNvidia") : L.T("errVibGeneric");
                     return false;
                 }
                 return true;
@@ -670,12 +713,17 @@ namespace NvidiaCS2Toggle
         public void ApplyCs2()    { Apply("CS2", Settings.Cs2W, Settings.Cs2H, Settings.Cs2Vib); }
         public void ApplyNormal() { Apply("Normal", Settings.NorW, Settings.NorH, Settings.NorVib); }
 
-        public void OpenSettings() { using (var f = new SettingsForm()) f.ShowDialog(); }
+        public void OpenSettings()
+        {
+            // Si se cambia el idioma, la ventana se reabre traducida.
+            bool reopen;
+            do { using (var f = new SettingsForm()) { f.ShowDialog(); reopen = f.ReopenRequested; } } while (reopen);
+        }
 
         public void ToggleStartup()
         {
             try { Startup.Set(!Startup.Enabled); }
-            catch { Show(ToolTipIcon.Warning, "Iniciar con Windows", "No se pudo cambiar el inicio automatico con Windows."); }
+            catch { Show(ToolTipIcon.Warning, L.T("startupTitle"), L.T("errStartup")); }
         }
 
         public void ExitApp() { Exit(); }
@@ -695,17 +743,18 @@ namespace NvidiaCS2Toggle
             foreach (var m in monitors)
                 if (m.Device == dev) { monName = m.Friendly; break; }
 
+            string modeName = (name == "CS2") ? L.T("modeCs2") : L.T("modeNormal");
             if (resOk && vibOk)
             {
-                Show(ToolTipIcon.Info, "Modo " + name + " activado",
-                     string.Format("{0}: {1}x{2}  |  Color {3}%", monName, w, h, vibrance));
+                Show(ToolTipIcon.Info, string.Format(L.T("activeFmt"), modeName),
+                     string.Format(L.T("bodyFmt"), monName, w, h, vibrance));
             }
             else
             {
                 string msg = "";
                 if (!resOk) msg += resErr + "\n";
                 if (!vibOk) msg += vibErr;
-                Show(ToolTipIcon.Warning, "Modo " + name + ": se aplico solo en parte", msg.Trim());
+                Show(ToolTipIcon.Warning, string.Format(L.T("partialFmt"), modeName), msg.Trim());
             }
         }
 
@@ -755,13 +804,13 @@ namespace NvidiaCS2Toggle
             bool startup = app.StartupEnabled();
 
             int w = 210, y = 6;
-            y = AddRow("Modo CS2",    active == "CS2",    () => { Close(); _app.ApplyCs2(); }, y, w);
-            y = AddRow("Modo Normal", active == "Normal", () => { Close(); _app.ApplyNormal(); }, y, w);
+            y = AddRow(L.T("modeCs2"),    active == "CS2",    () => { Close(); _app.ApplyCs2(); }, y, w);
+            y = AddRow(L.T("modeNormal"), active == "Normal", () => { Close(); _app.ApplyNormal(); }, y, w);
             y = AddSep(y, w);
-            y = AddRow("Configuracion...", false, () => { Close(); _app.OpenSettings(); }, y, w);
-            y = AddRow("Iniciar con Windows", startup, () => { _app.ToggleStartup(); Close(); }, y, w);
+            y = AddRow(L.T("settings"), false, () => { Close(); _app.OpenSettings(); }, y, w);
+            y = AddRow(L.T("startup"), startup, () => { _app.ToggleStartup(); Close(); }, y, w);
             y = AddSep(y, w);
-            y = AddRow("Salir", false, () => { Close(); _app.ExitApp(); }, y, w);
+            y = AddRow(L.T("quit"), false, () => { Close(); _app.ExitApp(); }, y, w);
 
             ClientSize = new Size(w, y + 8);
         }
@@ -942,9 +991,10 @@ namespace NvidiaCS2Toggle
     // -----------------------------------------------------------------------
     class SettingsForm : Form
     {
-        ComboBox _mon, _cRes, _nRes;
+        ComboBox _mon, _cRes, _nRes, _lang;
         Slider _cVib, _nVib;
         readonly List<MonitorInfo> _monitors;
+        public bool ReopenRequested; // true si se cambio el idioma (reabrir traducida)
 
         [DllImport("user32.dll")] static extern bool ReleaseCapture();
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
@@ -957,7 +1007,7 @@ namespace NvidiaCS2Toggle
             BackColor = Theme.Bg;
             ForeColor = Theme.Text;
             Font = new Font("Segoe UI", 9f);
-            ClientSize = new Size(320, 362);
+            ClientSize = new Size(320, 398);
             Padding = new Padding(1); // espacio para el borde de acento
             Text = "CS2 Res Tweaker";       // etiqueta en la barra de tareas
             Icon = TrayApp.MakeIcon();       // icono de la app en la barra de tareas
@@ -967,28 +1017,42 @@ namespace NvidiaCS2Toggle
 
             _monitors = Display.EnumerateMonitors();
 
-            AddHeader("Monitor de juego", 50);
-            _mon = MakeCombo(16, 76, 288);
+            AddLabel(L.T("language"), 16, 52);
+            _lang = MakeCombo(120, 48, 160);
+            _lang.Items.Add("Espanol"); _lang.Items.Add("English");
+            _lang.SelectedIndex = L.IsEn ? 1 : 0;
+            _lang.SelectedIndexChanged += (s, e) =>
+            {
+                string nl = _lang.SelectedIndex == 1 ? "en" : "es";
+                if (nl != Settings.Language)
+                {
+                    Settings.Language = nl; Settings.Save(); L.Load();
+                    ReopenRequested = true; Close(); // se reabre traducida
+                }
+            };
+
+            AddHeader(L.T("gamingMonitor"), 86);
+            _mon = MakeCombo(16, 112, 288);
             for (int i = 0; i < _monitors.Count; i++)
-                _mon.Items.Add((i + 1) + ". " + _monitors[i].Friendly + (_monitors[i].Primary ? "  (principal)" : ""));
+                _mon.Items.Add((i + 1) + ". " + _monitors[i].Friendly + (_monitors[i].Primary ? L.T("primary") : ""));
             _mon.SelectedIndexChanged += (s, e) => OnMonitorChanged();
 
-            AddHeader("Modo CS2", 116);
-            AddLabel("Resolucion", 16, 144);
-            _cRes = MakeCombo(110, 140, 150);
-            AddLabel("Vibrance", 16, 176);
-            _cVib = AddVib(90, 170, Settings.Cs2Vib);
+            AddHeader(L.T("modeCs2"), 152);
+            AddLabel(L.T("resolution"), 16, 180);
+            _cRes = MakeCombo(110, 176, 150);
+            AddLabel(L.T("color"), 16, 212);
+            _cVib = AddVib(90, 206, Settings.Cs2Vib);
 
-            AddHeader("Modo Normal", 218);
-            AddLabel("Resolucion", 16, 246);
-            _nRes = MakeCombo(110, 242, 150);
-            AddLabel("Vibrance", 16, 278);
-            _nVib = AddVib(90, 272, Settings.NorVib);
+            AddHeader(L.T("modeNormal"), 254);
+            AddLabel(L.T("resolution"), 16, 282);
+            _nRes = MakeCombo(110, 278, 150);
+            AddLabel(L.T("color"), 16, 314);
+            _nVib = AddVib(90, 308, Settings.NorVib);
 
-            var ok = MakeButton("Guardar", DialogResult.OK, true);
-            ok.Left = 138; ok.Top = 320; ok.Click += (s, e) => SaveAll();
-            var cancel = MakeButton("Cancelar", DialogResult.Cancel, false);
-            cancel.Left = 226; cancel.Top = 320;
+            var ok = MakeButton(L.T("save"), DialogResult.OK, true);
+            ok.Left = 138; ok.Top = 356; ok.Click += (s, e) => SaveAll();
+            var cancel = MakeButton(L.T("cancel"), DialogResult.Cancel, false);
+            cancel.Left = 226; cancel.Top = 356;
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
 
@@ -1114,6 +1178,7 @@ namespace NvidiaCS2Toggle
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            L.Load();
             Application.Run(new TrayApp());
         }
     }

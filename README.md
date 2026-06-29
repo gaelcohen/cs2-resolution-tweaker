@@ -28,6 +28,7 @@ Abre **Configuración…** desde el menú:
 - **Monitor de juego**: a qué monitor se le aplican los cambios.
 - **Resolución**: lista desplegable con las resoluciones que tu monitor soporta (se detectan solas). Las resoluciones personalizadas que crees en el Panel de NVIDIA también aparecen aquí.
 - **Color (Digital Vibrance)**: barra de 0 a 100. En la escala de NVIDIA, **50 = neutro** y **100 = máximo**.
+- **Idioma**: Español o English. La app se reabre en el idioma elegido.
 
 Valores por defecto: CS2 → 1440×1080 al 100% · Normal → 2560×1440 al 50%.
 
@@ -65,13 +66,14 @@ Genera `CS2ResTweaker.exe` (el icono se toma de `icon.ico`).
 
 It's **portable**: a single `.exe`, no installer, no dependencies (it uses the .NET Framework built into Windows 10/11). No admin rights needed. Your settings are stored in `config.txt`, next to the `.exe`.
 
-> The UI is in Spanish. Quick glossary: *Modo* = Mode, *Configuración* = Settings, *Monitor de juego* = Gaming monitor, *Resolución* = Resolution, *Color* = Digital Vibrance, *Iniciar con Windows* = Start with Windows, *Salir* = Quit.
+> The UI defaults to Spanish — switch it to **English** in *Configuración → Idioma (Language)* and the app reopens translated.
 
 ### Settings
 Open **Configuración…** from the menu:
 - **Gaming monitor**: which monitor the changes apply to.
 - **Resolution**: a dropdown of the resolutions your monitor actually supports (auto-detected). Custom resolutions you create in the NVIDIA Control Panel show up here too.
 - **Color (Digital Vibrance)**: a 0–100 slider. On NVIDIA's scale, **50 = neutral** and **100 = maximum**.
+- **Language**: Spanish or English. The app reopens in the chosen language.
 
 Defaults: CS2 → 1440×1080 at 100% · Normal → 2560×1440 at 50%.
 
