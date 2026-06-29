@@ -707,8 +707,9 @@ namespace NvidiaCS2Toggle
             y = AddRow("Salir", false, () => { Close(); _app.ExitApp(); }, y, w);
 
             ClientSize = new Size(w, y + 8);
-            UI.Round(this, 14);
         }
+
+        protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); UI.RoundWindow(Handle); }
 
         int AddRow(string text, bool active, Action onClick, int y, int w)
         {
@@ -747,15 +748,6 @@ namespace NvidiaCS2Toggle
         }
 
         protected override void OnDeactivate(EventArgs e) { base.OnDeactivate(e); Close(); }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var path = UI.RoundRect(new Rectangle(0, 0, Width - 1, Height - 1), 14))
-            using (var pen = new Pen(Theme.Accent, 1.4f))
-                e.Graphics.DrawPath(pen, path);
-        }
     }
 
     // -----------------------------------------------------------------------
@@ -763,14 +755,14 @@ namespace NvidiaCS2Toggle
     // -----------------------------------------------------------------------
     static class Theme
     {
-        public static readonly Color Bg      = Color.FromArgb(18, 86, 162);   // azul (mas claro)
-        public static readonly Color Panel   = Color.FromArgb(28, 104, 190);
-        public static readonly Color Text    = Color.FromArgb(238, 244, 252);
+        public static readonly Color Bg      = Color.FromArgb(11, 22, 34);    // azul casi negro
+        public static readonly Color Panel   = Color.FromArgb(20, 36, 58);
+        public static readonly Color Text    = Color.FromArgb(224, 232, 242);
         public static readonly Color Accent  = Color.FromArgb(248, 157, 28);  // f89d1c
         public static readonly Color AccentH = Color.FromArgb(255, 181, 71);
-        public static readonly Color Border  = Color.FromArgb(74, 144, 222);
-        public static readonly Color Hover   = Color.FromArgb(40, 120, 208);
-        public static readonly Color Track   = Color.FromArgb(12, 60, 118);
+        public static readonly Color Border  = Color.FromArgb(38, 58, 86);
+        public static readonly Color Hover   = Color.FromArgb(28, 50, 80);
+        public static readonly Color Track   = Color.FromArgb(18, 32, 52);
     }
 
     // Helpers de esquinas redondeadas (look moderno).
@@ -790,10 +782,16 @@ namespace NvidiaCS2Toggle
             return p;
         }
 
-        public static void Round(Control c, int radius)
+        [DllImport("dwmapi.dll")]
+        static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+        // Esquinas redondeadas nativas de Windows 11 (suaves, sin recorte dentado) + borde de acento.
+        public static void RoundWindow(IntPtr hwnd)
         {
-            using (var p = RoundRect(new Rectangle(0, 0, c.Width, c.Height), radius))
-                c.Region = new Region(p);
+            int round = 2; // DWMWCP_ROUND
+            DwmSetWindowAttribute(hwnd, 33, ref round, 4); // DWMWA_WINDOW_CORNER_PREFERENCE
+            int border = Theme.Accent.R | (Theme.Accent.G << 8) | (Theme.Accent.B << 16); // COLORREF
+            DwmSetWindowAttribute(hwnd, 34, ref border, 4); // DWMWA_BORDER_COLOR
         }
     }
 
@@ -942,9 +940,9 @@ namespace NvidiaCS2Toggle
             int idx = 0;
             for (int i = 0; i < _monitors.Count; i++) if (_monitors[i].Device == dev) idx = i;
             if (_monitors.Count > 0) _mon.SelectedIndex = idx; else OnMonitorChanged();
-
-            UI.Round(this, 16);
         }
+
+        protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); UI.RoundWindow(Handle); }
 
         void OnMonitorChanged()
         {
@@ -986,15 +984,6 @@ namespace NvidiaCS2Toggle
 
             bar.Controls.Add(title); bar.Controls.Add(close);
             Controls.Add(bar);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var path = UI.RoundRect(new Rectangle(0, 0, Width - 1, Height - 1), 16))
-            using (var pen = new Pen(Theme.Accent, 1.4f)) // borde de acento redondeado
-                e.Graphics.DrawPath(pen, path);
         }
 
         void AddHeader(string text, int y)
