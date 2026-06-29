@@ -560,6 +560,51 @@ namespace NvidiaCS2Toggle
                 if (unload != null) unload();
             }
         }
+
+        // Lee el % de color actual del monitor (inverso del mapeo de SetVibrancePercent).
+        // Devuelve false si no es NVIDIA o no se pudo leer.
+        public static bool GetVibrancePercent(string deviceName, out int percent)
+        {
+            percent = 50;
+            Initialize_t init; EnumDisplay_t enumDisp; GetAssocName_t getName; GetDVCInfo_t getInfo; Unload_t unload;
+            try
+            {
+                init     = Get<Initialize_t>(ID_Initialize);
+                enumDisp = Get<EnumDisplay_t>(ID_EnumNvidiaDisplayHandle);
+                getName  = Get<GetAssocName_t>(ID_GetAssociatedNvidiaDisplayName);
+                getInfo  = Get<GetDVCInfo_t>(ID_GetDVCInfo);
+                unload   = Get<Unload_t>(ID_Unload);
+            }
+            catch (DllNotFoundException) { return false; }
+
+            if (init == null || enumDisp == null || getInfo == null || init() != 0) return false;
+            bool filter = !string.IsNullOrEmpty(deviceName);
+            try
+            {
+                for (int i = 0; i < 16; i++)
+                {
+                    IntPtr h = IntPtr.Zero;
+                    if (enumDisp(i, ref h) != 0 || h == IntPtr.Zero) break;
+                    if (filter && getName != null)
+                    {
+                        var sb = new StringBuilder(64);
+                        if (getName(h, sb) != 0) continue;
+                        if (!string.Equals(sb.ToString().Trim(), deviceName.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
+                    }
+                    var info = new NV_DISPLAY_DVC_INFO();
+                    info.version = DVC_INFO_VER;
+                    if (getInfo(h, 0, ref info) != 0) continue;
+
+                    int level = info.currentLevel;
+                    if (level >= 0 && info.maxLevel != 0) percent = (int)Math.Round(50 + (double)level / info.maxLevel * 50);
+                    else if (level < 0 && info.minLevel != 0) percent = (int)Math.Round(50 - (double)level / info.minLevel * 50);
+                    else percent = 50;
+                    return true;
+                }
+                return false;
+            }
+            finally { if (unload != null) unload(); }
+        }
     }
 
     // Resuelve el dispositivo del "monitor de juego" (guardado, o principal, o el primero).
@@ -603,11 +648,20 @@ namespace NvidiaCS2Toggle
         {
             string dev = Game.Device(Display.EnumerateMonitors());
             int w, h;
-            if (dev != null && Display.GetCurrentResolution(dev, out w, out h))
-            {
-                if (w == Settings.Cs2W && h == Settings.Cs2H) return "CS2";
-                if (w == Settings.NorW && h == Settings.NorH) return "Normal";
-            }
+            if (dev == null || !Display.GetCurrentResolution(dev, out w, out h)) return "";
+
+            bool resCs2 = (w == Settings.Cs2W && h == Settings.Cs2H);
+            bool resNor = (w == Settings.NorW && h == Settings.NorH);
+            if (!resCs2 && !resNor) return "";
+
+            // Desempata por color (necesario cuando ambos perfiles comparten resolucion).
+            int pct;
+            bool haveVib = Nvidia.GetVibrancePercent(dev, out pct);
+            bool vibCs2 = !haveVib || Math.Abs(pct - Settings.Cs2Vib) <= 3;
+            bool vibNor = !haveVib || Math.Abs(pct - Settings.NorVib) <= 3;
+
+            if (resCs2 && vibCs2) return "CS2";
+            if (resNor && vibNor) return "Normal";
             return "";
         }
 
