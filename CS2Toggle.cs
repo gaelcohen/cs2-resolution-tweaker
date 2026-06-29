@@ -725,7 +725,7 @@ namespace NvidiaCS2Toggle
         {
             var b = new Button
             {
-                Text = (active ? "●   " : "        ") + text, // bolita naranja si esta activo
+                Text = (active ? "✓   " : "       ") + text, // tick naranja si esta activo
                 Left = 6, Top = y, Width = w - 12, Height = 32,
                 FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft,
                 BackColor = Theme.Bg, ForeColor = active ? Theme.Accent : Theme.Text,
