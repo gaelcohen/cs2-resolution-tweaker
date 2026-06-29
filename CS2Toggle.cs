@@ -347,6 +347,25 @@ namespace NvidiaCS2Toggle
             return list;
         }
 
+        // Resoluciones que el monitor/PC realmente soporta, como "ANCHOxALTO",
+        // sin duplicados y de mayor a menor. (Las custom del panel NVIDIA tambien salen.)
+        public static List<string> GetSupportedResolutions(string device)
+        {
+            var seen = new HashSet<string>();
+            var list = new List<int[]>();
+            DEVMODE dm = new DEVMODE();
+            dm.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
+            for (int i = 0; EnumDisplaySettings(device, i, ref dm); i++)
+            {
+                string key = dm.dmPelsWidth + "x" + dm.dmPelsHeight;
+                if (seen.Add(key)) list.Add(new int[] { dm.dmPelsWidth, dm.dmPelsHeight });
+            }
+            list.Sort((a, b) => a[0] != b[0] ? b[0] - a[0] : b[1] - a[1]);
+            var outl = new List<string>();
+            foreach (var r in list) outl.Add(r[0] + "x" + r[1]);
+            return outl;
+        }
+
         public static bool GetCurrentResolution(string device, out int width, out int height)
         {
             width = 0; height = 0;
@@ -658,7 +677,8 @@ namespace NvidiaCS2Toggle
 
         void OpenSettings()
         {
-            using (var f = new SettingsForm()) f.ShowDialog();
+            string dev = GetGameDevice(Display.EnumerateMonitors());
+            using (var f = new SettingsForm(dev)) f.ShowDialog();
         }
 
         void Apply(string name, int w, int h, int vibrance)
@@ -732,55 +752,80 @@ namespace NvidiaCS2Toggle
     // -----------------------------------------------------------------------
     class SettingsForm : Form
     {
-        NumericUpDown _cw, _ch, _cv, _nw, _nh, _nv;
+        ComboBox _cRes, _nRes;
+        TrackBar _cVib, _nVib;
 
-        public SettingsForm()
+        public SettingsForm(string device)
         {
             Text = "Configuracion - CS2 Res Tweaker";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterScreen;
             MaximizeBox = false; MinimizeBox = false;
-            ClientSize = new Size(360, 175);
+            ClientSize = new Size(330, 285);
 
-            AddLabel("Ancho", 120, 12); AddLabel("Alto", 195, 12); AddLabel("Vibrance %", 265, 12);
+            var resolutions = Display.GetSupportedResolutions(device);
 
-            AddLabel("Modo CS2:", 12, 44);
-            _cw = AddNum(120, 40, 320, 16000, Settings.Cs2W);
-            _ch = AddNum(195, 40, 240, 16000, Settings.Cs2H);
-            _cv = AddNum(270, 40, 0, 100, Settings.Cs2Vib);
+            AddLabel("Modo CS2", 12, 12, true);
+            AddLabel("Resolucion:", 12, 40);
+            _cRes = AddCombo(110, 36, resolutions, Settings.Cs2W, Settings.Cs2H);
+            AddLabel("Vibrance:", 12, 72);
+            _cVib = AddVib(80, 68, Settings.Cs2Vib);
 
-            AddLabel("Modo Normal:", 12, 80);
-            _nw = AddNum(120, 76, 320, 16000, Settings.NorW);
-            _nh = AddNum(195, 76, 240, 16000, Settings.NorH);
-            _nv = AddNum(270, 76, 0, 100, Settings.NorVib);
+            AddLabel("Modo Normal", 12, 142, true);
+            AddLabel("Resolucion:", 12, 170);
+            _nRes = AddCombo(110, 166, resolutions, Settings.NorW, Settings.NorH);
+            AddLabel("Vibrance:", 12, 202);
+            _nVib = AddVib(80, 198, Settings.NorVib);
 
-            AddLabel("Vibrance: 50 = neutro, 100 = maximo.", 12, 112);
-
-            var ok = new Button { Text = "Guardar", Left = 175, Top = 138, Width = 80, DialogResult = DialogResult.OK };
+            var ok = new Button { Text = "Guardar", Left = 145, Top = 250, Width = 80, DialogResult = DialogResult.OK };
             ok.Click += (s, e) => SaveAll();
-            var cancel = new Button { Text = "Cancelar", Left = 263, Top = 138, Width = 80, DialogResult = DialogResult.Cancel };
+            var cancel = new Button { Text = "Cancelar", Left = 233, Top = 250, Width = 80, DialogResult = DialogResult.Cancel };
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
         }
 
-        void AddLabel(string text, int x, int y)
+        void AddLabel(string text, int x, int y, bool bold = false)
         {
-            Controls.Add(new Label { Text = text, Left = x, Top = y, AutoSize = true });
+            var l = new Label { Text = text, Left = x, Top = y, AutoSize = true };
+            if (bold) l.Font = new Font(l.Font, FontStyle.Bold);
+            Controls.Add(l);
         }
 
-        NumericUpDown AddNum(int x, int y, int min, int max, int val)
+        ComboBox AddCombo(int x, int y, List<string> items, int w, int h)
         {
-            if (val < min) val = min;
-            if (val > max) val = max;
-            var n = new NumericUpDown { Left = x, Top = y, Width = 65, Minimum = min, Maximum = max, Value = val };
-            Controls.Add(n);
-            return n;
+            var c = new ComboBox { Left = x, Top = y, Width = 130, DropDownStyle = ComboBoxStyle.DropDownList };
+            c.Items.AddRange(items.ToArray());
+            string cur = w + "x" + h;
+            if (!c.Items.Contains(cur)) c.Items.Insert(0, cur); // conserva el valor guardado aunque no se liste
+            c.SelectedItem = cur;
+            if (c.SelectedIndex < 0 && c.Items.Count > 0) c.SelectedIndex = 0;
+            Controls.Add(c);
+            return c;
+        }
+
+        // Barra 0-100 con su valor numerico al lado, actualizado en vivo.
+        TrackBar AddVib(int x, int y, int val)
+        {
+            if (val < 0) val = 0; if (val > 100) val = 100;
+            var t = new TrackBar { Left = x, Top = y, Width = 180, Minimum = 0, Maximum = 100,
+                                   Value = val, TickFrequency = 10 };
+            var num = new Label { Left = x + 185, Top = y + 5, AutoSize = true, Text = val.ToString() };
+            t.ValueChanged += (s, e) => num.Text = t.Value.ToString();
+            Controls.Add(t); Controls.Add(num);
+            return t;
+        }
+
+        static void ParseRes(ComboBox c, out int w, out int h)
+        {
+            var p = ((string)c.SelectedItem).Split('x');
+            w = int.Parse(p[0]); h = int.Parse(p[1]);
         }
 
         void SaveAll()
         {
-            Settings.Cs2W = (int)_cw.Value; Settings.Cs2H = (int)_ch.Value; Settings.Cs2Vib = (int)_cv.Value;
-            Settings.NorW = (int)_nw.Value; Settings.NorH = (int)_nh.Value; Settings.NorVib = (int)_nv.Value;
+            int w, h;
+            ParseRes(_cRes, out w, out h); Settings.Cs2W = w; Settings.Cs2H = h; Settings.Cs2Vib = _cVib.Value;
+            ParseRes(_nRes, out w, out h); Settings.NorW = w; Settings.NorH = h; Settings.NorVib = _nVib.Value;
             Settings.Save();
         }
     }
