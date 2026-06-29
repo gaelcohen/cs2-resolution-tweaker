@@ -712,19 +712,16 @@ namespace NvidiaCS2Toggle
 
         int AddRow(string text, bool active, Action onClick, int y, int w)
         {
-            var b = new Button
+            var b = new PillButton
             {
                 Text = (active ? "✓   " : "       ") + text, // tick naranja si esta activo
                 Left = 8, Top = y, Width = w - 16, Height = 34,
-                FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft,
-                BackColor = Theme.Bg, ForeColor = active ? Theme.Accent : Theme.Text,
-                Padding = new Padding(12, 0, 0, 0), TabStop = false, Cursor = Cursors.Hand
+                Normal = Theme.Bg, HoverColor = Theme.Hover,
+                Fore = active ? Theme.Accent : Theme.Text,
+                LeftAlign = true, Radius = 9, Font = Font
             };
-            b.FlatAppearance.BorderSize = 0;
-            b.FlatAppearance.MouseOverBackColor = Theme.Hover;
             b.Click += (s, e) => onClick();
             Controls.Add(b);
-            UI.Round(b, 9); // fila tipo pildora
             return y + 36;
         }
 
@@ -766,14 +763,14 @@ namespace NvidiaCS2Toggle
     // -----------------------------------------------------------------------
     static class Theme
     {
-        public static readonly Color Bg      = Color.FromArgb(0, 42, 92);     // azul oscuro (variante de 00428b)
-        public static readonly Color Panel   = Color.FromArgb(0, 66, 139);    // 00428b
-        public static readonly Color Text    = Color.FromArgb(230, 238, 247);
+        public static readonly Color Bg      = Color.FromArgb(18, 86, 162);   // azul (mas claro)
+        public static readonly Color Panel   = Color.FromArgb(28, 104, 190);
+        public static readonly Color Text    = Color.FromArgb(238, 244, 252);
         public static readonly Color Accent  = Color.FromArgb(248, 157, 28);  // f89d1c
         public static readonly Color AccentH = Color.FromArgb(255, 181, 71);
-        public static readonly Color Border  = Color.FromArgb(30, 91, 168);
-        public static readonly Color Hover   = Color.FromArgb(10, 79, 158);
-        public static readonly Color Track   = Color.FromArgb(20, 54, 95);
+        public static readonly Color Border  = Color.FromArgb(74, 144, 222);
+        public static readonly Color Hover   = Color.FromArgb(40, 120, 208);
+        public static readonly Color Track   = Color.FromArgb(12, 60, 118);
     }
 
     // Helpers de esquinas redondeadas (look moderno).
@@ -797,6 +794,44 @@ namespace NvidiaCS2Toggle
         {
             using (var p = RoundRect(new Rectangle(0, 0, c.Width, c.Height), radius))
                 c.Region = new Region(p);
+        }
+    }
+
+    // Boton dibujado a mano con esquinas redondeadas suaves (anti-aliasing).
+    // Reemplaza el recorte por Region, que se ve dentado / estilo XP.
+    class PillButton : Button
+    {
+        public Color Normal = Theme.Bg, HoverColor = Theme.Hover, Fore = Theme.Text;
+        public int Radius = 9;
+        public bool LeftAlign = false;
+        bool _hover;
+
+        public PillButton()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            TabStop = false;
+            Cursor = Cursors.Hand;
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { _hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(Parent != null ? Parent.BackColor : Theme.Bg); // las esquinas se funden con el fondo
+            using (var path = UI.RoundRect(new Rectangle(0, 0, Width - 1, Height - 1), Radius))
+            using (var b = new SolidBrush(_hover ? HoverColor : Normal))
+                g.FillPath(b, path);
+            int pad = LeftAlign ? 12 : 0;
+            var rect = new Rectangle(pad, 0, Width - pad, Height);
+            var flags = TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis |
+                        (LeftAlign ? TextFormatFlags.Left : TextFormatFlags.HorizontalCenter);
+            TextRenderer.DrawText(g, Text, Font, rect, Fore, flags);
         }
     }
 
@@ -1000,15 +1035,15 @@ namespace NvidiaCS2Toggle
             return t;
         }
 
-        Button MakeButton(string text, DialogResult dr, bool accent)
+        PillButton MakeButton(string text, DialogResult dr, bool accent)
         {
-            var b = new Button { Text = text, FlatStyle = FlatStyle.Flat, DialogResult = dr, Width = 80, Height = 28,
-                                 BackColor = accent ? Theme.Accent : Theme.Panel,
-                                 ForeColor = accent ? Color.Black : Theme.Text };
-            b.FlatAppearance.BorderColor = accent ? Theme.Accent : Theme.Border;
-            b.FlatAppearance.MouseOverBackColor = accent ? Theme.AccentH : Theme.Hover;
-            UI.Round(b, 8); // boton tipo pildora
-            return b;
+            return new PillButton
+            {
+                Text = text, DialogResult = dr, Width = 84, Height = 30, Radius = 8,
+                Normal = accent ? Theme.Accent : Theme.Panel,
+                HoverColor = accent ? Theme.AccentH : Theme.Hover,
+                Fore = accent ? Color.Black : Theme.Text
+            };
         }
 
         static void ParseRes(ComboBox c, out int w, out int h)
