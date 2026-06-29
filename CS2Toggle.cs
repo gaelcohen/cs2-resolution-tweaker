@@ -387,7 +387,7 @@ namespace NvidiaCS2Toggle
 
             if (!EnumDisplaySettings(device, ENUM_CURRENT_SETTINGS, ref dm))
             {
-                error = "No se pudo leer la configuracion actual de la pantalla.";
+                error = "No se pudo leer la configuracion de tu pantalla.";
                 return false;
             }
 
@@ -401,9 +401,10 @@ namespace NvidiaCS2Toggle
             int result = ChangeDisplaySettingsEx(device, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY, IntPtr.Zero);
             if (result != DISP_CHANGE_SUCCESSFUL)
             {
-                error = string.Format("No se pudo cambiar a {0}x{1} (codigo {2}). " +
-                                      "Verifica que esa resolucion este disponible / habilitada en el panel NVIDIA.",
-                                      width, height, result);
+                error = string.Format("Tu monitor no acepto la resolucion {0}x{1}. " +
+                                      "Si la quieres usar, creala en el Panel de Control de NVIDIA " +
+                                      "(Cambiar resolucion -> Personalizar) y vuelve a intentarlo.",
+                                      width, height);
                 return false;
             }
             return true;
@@ -484,19 +485,20 @@ namespace NvidiaCS2Toggle
             }
             catch (DllNotFoundException)
             {
-                error = "No se encontro nvapi64.dll. Necesitas drivers NVIDIA instalados (GPU NVIDIA).";
+                error = "No se detecto una tarjeta grafica NVIDIA (o faltan sus drivers). " +
+                        "El ajuste de color solo funciona con NVIDIA.";
                 return false;
             }
 
             if (init == null || enumDisp == null || getInfo == null || setLevel == null)
             {
-                error = "No se pudieron resolver las funciones de NVAPI.";
+                error = "Tus drivers NVIDIA no permiten ajustar el color. Prueba actualizarlos.";
                 return false;
             }
 
             if (init() != 0)
             {
-                error = "NvAPI_Initialize fallo.";
+                error = "No se pudo conectar con la tarjeta NVIDIA. Prueba reiniciar o actualizar los drivers.";
                 return false;
             }
 
@@ -546,8 +548,9 @@ namespace NvidiaCS2Toggle
                 if (!anyOk)
                 {
                     error = (filter && !matched)
-                        ? "El monitor seleccionado no se encontro en NVAPI (¿conectado a la GPU NVIDIA?)."
-                        : "No se pudo aplicar el Digital Vibrance.";
+                        ? "El monitor elegido no esta conectado a la tarjeta NVIDIA. " +
+                          "Conectalo a la NVIDIA o elige otro monitor en Configuracion."
+                        : "No se pudo cambiar el color (vibrance) de la pantalla.";
                     return false;
                 }
                 return true;
@@ -618,7 +621,7 @@ namespace NvidiaCS2Toggle
         public void ToggleStartup()
         {
             try { Startup.Set(!Startup.Enabled); }
-            catch (Exception ex) { Show(ToolTipIcon.Warning, "Iniciar con Windows", ex.Message); }
+            catch { Show(ToolTipIcon.Warning, "Iniciar con Windows", "No se pudo cambiar el inicio automatico con Windows."); }
         }
 
         public void ExitApp() { Exit(); }
@@ -640,15 +643,15 @@ namespace NvidiaCS2Toggle
 
             if (resOk && vibOk)
             {
-                Show(ToolTipIcon.Info, "Modo " + name,
-                     string.Format("{0}: {1}x{2}  |  Vibrance {3}%", monName, w, h, vibrance));
+                Show(ToolTipIcon.Info, "Modo " + name + " activado",
+                     string.Format("{0}: {1}x{2}  |  Color {3}%", monName, w, h, vibrance));
             }
             else
             {
                 string msg = "";
-                if (!resOk) msg += "Resolucion: " + resErr + "\n";
-                if (!vibOk) msg += "Vibrance: " + vibErr;
-                Show(ToolTipIcon.Warning, "Modo " + name + " (parcial)", msg.Trim());
+                if (!resOk) msg += resErr + "\n";
+                if (!vibOk) msg += vibErr;
+                Show(ToolTipIcon.Warning, "Modo " + name + ": se aplico solo en parte", msg.Trim());
             }
         }
 

@@ -1,50 +1,100 @@
 # CS2 Res Tweaker
 
-App diminuta de bandeja del sistema (Windows) para alternar entre dos perfiles
-cambiando **resolución** y **Digital Vibrance** de NVIDIA — pensada para activar
-el modo estirado + vibrance alto de CS2 con un clic, y volver a tu escritorio normal.
+[Español](#español) · [English](#english)
 
-Los cambios se aplican **solo al monitor que elijas** como "Monitor de juego".
+App diminuta de bandeja del sistema (Windows) para alternar con un clic entre un perfil **CS2** (resolución estirada + color intenso) y tu perfil **Normal**, cambiando la **resolución** y el **Digital Vibrance** de NVIDIA. Los cambios se aplican **solo al monitor que elijas**.
 
-## Descargar y usar (portable)
+A tiny Windows tray app to switch — in one click — between a **CS2** profile (stretched resolution + boosted color) and your **Normal** profile, changing **resolution** and NVIDIA **Digital Vibrance**. Changes apply **only to the monitor you pick**.
 
-1. Descarga `CS2ResTweaker.exe` desde [Releases](../../releases) (o compílalo, ver abajo).
-2. Doble clic. Aparece un icono verde **CS** en la bandeja (zona oculta de la barra de tareas).
-3. **Clic** en el icono → menú:
-   - **Modo CS2** / **Modo Normal** — aplica resolución + vibrance (el perfil activo lleva ✓).
-   - **Monitor de juego ▸** — elige a qué monitor afectan los cambios.
-   - **Configuración…** — edita resolución y vibrance de cada perfil.
+![tema oscuro azul/naranja](#)
+
+---
+
+## Español
+
+### Descargar y usar
+1. Descarga `CS2ResTweaker.exe` desde la pestaña **[Releases](../../releases)**.
+2. Doble clic. Aparece el icono de la app en la bandeja del sistema (zona junto al reloj; puede estar en la flecha **⌃** de iconos ocultos).
+3. **Clic** en el icono → se abre un menú propio:
+   - **Modo CS2** / **Modo Normal** — aplica resolución + color de ese perfil. El activo lleva un ✓.
+   - **Configuración…** — elige el monitor de juego y edita la resolución y el color de cada perfil.
    - **Iniciar con Windows** — arranca solo al iniciar sesión.
    - **Salir**.
 
-Es portable: un único `.exe`, sin instalador y sin dependencias (usa el .NET
-Framework que ya viene en Windows 10/11). La configuración se guarda en
-`config.txt` junto al `.exe`.
+Es **portable**: un único `.exe`, sin instalador y sin dependencias (usa el .NET Framework incluido en Windows 10/11). No necesita permisos de administrador. Tu configuración se guarda en `config.txt`, junto al `.exe`.
 
-## Requisitos
+### Configuración
+Abre **Configuración…** desde el menú:
+- **Monitor de juego**: a qué monitor se le aplican los cambios.
+- **Resolución**: lista desplegable con las resoluciones que tu monitor soporta (se detectan solas). Las resoluciones personalizadas que crees en el Panel de NVIDIA también aparecen aquí.
+- **Color (Digital Vibrance)**: barra de 0 a 100. En la escala de NVIDIA, **50 = neutro** y **100 = máximo**.
 
-- Windows 10/11.
-- GPU **NVIDIA** con drivers instalados (para el Digital Vibrance, vía `nvapi64.dll`).
-  El cambio de resolución funciona en cualquier equipo.
-- El monitor de juego debe estar conectado a la GPU NVIDIA para el vibrance.
+Valores por defecto: CS2 → 1440×1080 al 100% · Normal → 2560×1440 al 50%.
 
-## Notas
+### Requisitos
+- Windows 10 u 11. *(Las esquinas redondeadas son de Windows 11; en Windows 10 funciona igual pero con ventanas rectas.)*
+- Para el **color**: tarjeta gráfica **NVIDIA** con drivers instalados, y el monitor de juego conectado a esa NVIDIA.
+- El **cambio de resolución** funciona en cualquier equipo.
 
-- Si la resolución que pones (p. ej. 1440x1080) no está disponible, Windows la
-  rechaza: créala/actívala en *Panel NVIDIA → Cambiar resolución → Personalizar*
-  y pon el escalado en "Pantalla completa" para el modo estirado.
-- El % de vibrance usa la escala del Panel NVIDIA: **50 = neutro**, 100 = máximo.
+### Mensajes de error (qué significan)
+Aparecen como una notificación de Windows:
+- **"No se detectó una tarjeta gráfica NVIDIA…"** → no tienes NVIDIA o faltan drivers. La resolución igual cambia; solo el color no.
+- **"El monitor elegido no está conectado a la tarjeta NVIDIA…"** → ese monitor cuelga de la gráfica integrada. Conéctalo a la NVIDIA o elige otro en Configuración.
+- **"Tu monitor no aceptó la resolución…"** → esa resolución no está disponible. Créala en *Panel NVIDIA → Cambiar resolución → Personalizar* (para CS2, pon el escalado en "Pantalla completa").
+- **"Modo … se aplicó solo en parte"** → una parte funcionó y la otra no; el detalle indica cuál.
 
-## Compilar
-
+### Compilar desde el código
 No necesitas Visual Studio ni el SDK de .NET — Windows ya trae el compilador:
-
 ```powershell
 .\build.ps1
 ```
+Genera `CS2ResTweaker.exe` (el icono se toma de `icon.ico`).
 
-Genera `CS2ResTweaker.exe`.
+---
 
-## Licencia
+## English
 
-MIT — ver [LICENSE](LICENSE).
+### Download & use
+1. Download `CS2ResTweaker.exe` from the **[Releases](../../releases)** tab.
+2. Double-click it. The app icon appears in the system tray (near the clock; it may be under the hidden-icons **⌃** arrow).
+3. **Click** the icon → a custom menu opens:
+   - **Modo CS2** / **Modo Normal** — applies that profile's resolution + color. The active one shows a ✓.
+   - **Configuración…** (Settings) — pick the gaming monitor and edit each profile's resolution and color.
+   - **Iniciar con Windows** — start automatically at login.
+   - **Salir** (Quit).
+
+It's **portable**: a single `.exe`, no installer, no dependencies (it uses the .NET Framework built into Windows 10/11). No admin rights needed. Your settings are stored in `config.txt`, next to the `.exe`.
+
+> The UI is in Spanish. Quick glossary: *Modo* = Mode, *Configuración* = Settings, *Monitor de juego* = Gaming monitor, *Resolución* = Resolution, *Color* = Digital Vibrance, *Iniciar con Windows* = Start with Windows, *Salir* = Quit.
+
+### Settings
+Open **Configuración…** from the menu:
+- **Gaming monitor**: which monitor the changes apply to.
+- **Resolution**: a dropdown of the resolutions your monitor actually supports (auto-detected). Custom resolutions you create in the NVIDIA Control Panel show up here too.
+- **Color (Digital Vibrance)**: a 0–100 slider. On NVIDIA's scale, **50 = neutral** and **100 = maximum**.
+
+Defaults: CS2 → 1440×1080 at 100% · Normal → 2560×1440 at 50%.
+
+### Requirements
+- Windows 10 or 11. *(Rounded corners are a Windows 11 feature; on Windows 10 it works the same but with square windows.)*
+- For **color**: an **NVIDIA** GPU with drivers installed, and the gaming monitor connected to that NVIDIA card.
+- **Resolution switching** works on any PC.
+
+### Error messages (what they mean)
+Shown as a Windows notification:
+- **"No NVIDIA graphics card detected…"** → no NVIDIA or missing drivers. Resolution still changes; only color doesn't.
+- **"The chosen monitor isn't connected to the NVIDIA card…"** → that monitor runs off the integrated GPU. Connect it to the NVIDIA card or pick another in Settings.
+- **"Your monitor didn't accept the resolution…"** → that resolution isn't available. Create it in *NVIDIA Control Panel → Change resolution → Customize* (for CS2, set scaling to "Full-screen").
+- **"Mode … was only partially applied"** → one part worked and the other didn't; the detail says which.
+
+### Build from source
+No Visual Studio or .NET SDK needed — Windows ships the compiler:
+```powershell
+.\build.ps1
+```
+Produces `CS2ResTweaker.exe` (icon taken from `icon.ico`).
+
+---
+
+## Licencia / License
+MIT — see [LICENSE](LICENSE).
