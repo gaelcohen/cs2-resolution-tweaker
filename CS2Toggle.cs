@@ -558,137 +558,74 @@ namespace NvidiaCS2Toggle
         }
     }
 
-    // -----------------------------------------------------------------------
-    //  App de bandeja
-    // -----------------------------------------------------------------------
-    class TrayApp : ApplicationContext
+    // Resuelve el dispositivo del "monitor de juego" (guardado, o principal, o el primero).
+    static class Game
     {
-        readonly NotifyIcon _icon;
-        readonly ContextMenuStrip _menu;
-        readonly ToolStripMenuItem _itemCs2;
-        readonly ToolStripMenuItem _itemNormal;
-        readonly ToolStripMenuItem _itemMonitors;
-        readonly ToolStripMenuItem _itemStartup;
-
-        public TrayApp()
-        {
-            _itemCs2 = new ToolStripMenuItem("Modo CS2", null,
-                (s, e) => Apply("CS2", Settings.Cs2W, Settings.Cs2H, Settings.Cs2Vib));
-            _itemNormal = new ToolStripMenuItem("Modo Normal", null,
-                (s, e) => Apply("Normal", Settings.NorW, Settings.NorH, Settings.NorVib));
-            _itemMonitors = new ToolStripMenuItem("Monitor de juego");
-            _itemStartup = new ToolStripMenuItem("Iniciar con Windows", null, (s, e) => ToggleStartup());
-
-            _menu = new ContextMenuStrip();
-            _menu.Items.Add(_itemCs2);
-            _menu.Items.Add(_itemNormal);
-            _menu.Items.Add(new ToolStripSeparator());
-            _menu.Items.Add(_itemMonitors);
-            _menu.Items.Add("Configuracion...", null, (s, e) => OpenSettings());
-            _menu.Items.Add(_itemStartup);
-            _menu.Items.Add(new ToolStripSeparator());
-            _menu.Items.Add("Salir", null, (s, e) => Exit());
-
-            _menu.Renderer = new ToolStripProfessionalRenderer(new DarkMenuColors());
-            _menu.BackColor = Theme.Panel;
-            _menu.ForeColor = Theme.Text;
-
-            _menu.Opening += (s, e) => RebuildMenu();
-
-            _icon = new NotifyIcon
-            {
-                Icon = MakeIcon(),
-                Text = "CS2 Res Tweaker",
-                Visible = true,
-                ContextMenuStrip = _menu
-            };
-
-            // Clic simple izquierdo abre el menu desplegable.
-            _icon.MouseClick += (s, e) =>
-            {
-                if (e.Button == MouseButtons.Left) ShowMenu();
-            };
-        }
-
-        // Usa el mismo metodo interno que el clic derecho (maneja el foco correctamente).
-        void ShowMenu()
-        {
-            var mi = typeof(NotifyIcon).GetMethod("ShowContextMenu",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (mi != null) mi.Invoke(_icon, null);
-            else _menu.Show(Cursor.Position);
-        }
-
-        // Devuelve el dispositivo del monitor de juego: el guardado si sigue presente,
-        // si no el principal, si no el primero disponible.
-        string GetGameDevice(List<MonitorInfo> monitors)
+        public static string Device(List<MonitorInfo> monitors)
         {
             string saved = Settings.GameMonitor;
             if (!string.IsNullOrEmpty(saved))
                 foreach (var m in monitors)
                     if (m.Device == saved) return saved;
-
             foreach (var m in monitors)
                 if (m.Primary) return m.Device;
-
             return monitors.Count > 0 ? monitors[0].Device : null;
         }
+    }
 
-        void RebuildMenu()
+    // -----------------------------------------------------------------------
+    //  App de bandeja (icono + popup propio)
+    // -----------------------------------------------------------------------
+    class TrayApp : ApplicationContext
+    {
+        readonly NotifyIcon _icon;
+        MenuForm _menu;
+
+        public TrayApp()
         {
-            var monitors = Display.EnumerateMonitors();
-            string gameDev = GetGameDevice(monitors);
-
-            // Submenu de monitores
-            _itemMonitors.DropDownItems.Clear();
-            if (monitors.Count == 0)
-            {
-                _itemMonitors.DropDownItems.Add(new ToolStripMenuItem("(no se detectaron monitores)") { Enabled = false });
-            }
-            else
-            {
-                int n = 1;
-                foreach (var m in monitors)
-                {
-                    string label = string.Format("{0}. {1}{2}", n++, m.Friendly, m.Primary ? "  (principal)" : "");
-                    var it = new ToolStripMenuItem(label);
-                    it.Checked = (m.Device == gameDev);
-                    string dev = m.Device; // captura
-                    it.Click += (s, e) => { Settings.GameMonitor = dev; Settings.Save(); };
-                    _itemMonitors.DropDownItems.Add(it);
-                }
-            }
-
-            // Ticks de los perfiles segun la resolucion actual del monitor de juego
-            int w, h;
-            bool cs2 = false, normal = false;
-            if (gameDev != null && Display.GetCurrentResolution(gameDev, out w, out h))
-            {
-                cs2 = (w == Settings.Cs2W && h == Settings.Cs2H);
-                normal = (w == Settings.NorW && h == Settings.NorH);
-            }
-            _itemCs2.Checked = cs2;
-            _itemNormal.Checked = normal;
-
-            try { _itemStartup.Checked = Startup.Enabled; } catch { }
+            _icon = new NotifyIcon { Icon = MakeIcon(), Text = "CS2 Res Tweaker", Visible = true };
+            _icon.MouseClick += (s, e) => ShowMenu(); // izquierdo o derecho: popup propio
         }
 
-        void ToggleStartup()
+        void ShowMenu()
+        {
+            if (_menu != null && !_menu.IsDisposed) _menu.Close();
+            _menu = new MenuForm(this);
+            _menu.ShowAtCursor();
+        }
+
+        // ---- API que usa el popup ----
+        public string ActiveMode()
+        {
+            string dev = Game.Device(Display.EnumerateMonitors());
+            int w, h;
+            if (dev != null && Display.GetCurrentResolution(dev, out w, out h))
+            {
+                if (w == Settings.Cs2W && h == Settings.Cs2H) return "CS2";
+                if (w == Settings.NorW && h == Settings.NorH) return "Normal";
+            }
+            return "";
+        }
+
+        public bool StartupEnabled() { try { return Startup.Enabled; } catch { return false; } }
+
+        public void ApplyCs2()    { Apply("CS2", Settings.Cs2W, Settings.Cs2H, Settings.Cs2Vib); }
+        public void ApplyNormal() { Apply("Normal", Settings.NorW, Settings.NorH, Settings.NorVib); }
+
+        public void OpenSettings() { using (var f = new SettingsForm()) f.ShowDialog(); }
+
+        public void ToggleStartup()
         {
             try { Startup.Set(!Startup.Enabled); }
             catch (Exception ex) { Show(ToolTipIcon.Warning, "Iniciar con Windows", ex.Message); }
         }
 
-        void OpenSettings()
-        {
-            string dev = GetGameDevice(Display.EnumerateMonitors());
-            using (var f = new SettingsForm(dev)) f.ShowDialog();
-        }
+        public void ExitApp() { Exit(); }
 
         void Apply(string name, int w, int h, int vibrance)
         {
             var monitors = Display.EnumerateMonitors();
-            string dev = GetGameDevice(monitors);
+            string dev = Game.Device(monitors);
 
             // Todo en una sola accion: primero la resolucion, luego el vibrance
             // (asi el cambio de modo no resetea el vibrance recien aplicado).
@@ -751,9 +688,87 @@ namespace NvidiaCS2Toggle
     }
 
     // -----------------------------------------------------------------------
-    //  Ventana de configuracion (resolucion + vibrance de cada perfil).
-    //  Monitor e "Iniciar con Windows" se eligen desde el menu de la bandeja.
+    //  Popup propio de la app (reemplaza el menu nativo de Windows)
     // -----------------------------------------------------------------------
+    class MenuForm : Form
+    {
+        readonly TrayApp _app;
+
+        [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        public MenuForm(TrayApp app)
+        {
+            _app = app;
+            FormBorderStyle = FormBorderStyle.None;
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.Manual;
+            BackColor = Theme.Bg;
+            TopMost = true;
+            Font = new Font("Segoe UI", 9.5f);
+
+            string active = app.ActiveMode();
+            bool startup = app.StartupEnabled();
+
+            int w = 210, y = 6;
+            y = AddRow("Modo CS2",    active == "CS2",    () => { Close(); _app.ApplyCs2(); }, y, w);
+            y = AddRow("Modo Normal", active == "Normal", () => { Close(); _app.ApplyNormal(); }, y, w);
+            y = AddSep(y, w);
+            y = AddRow("Configuracion...", false, () => { Close(); _app.OpenSettings(); }, y, w);
+            y = AddRow("Iniciar con Windows", startup, () => { _app.ToggleStartup(); Close(); }, y, w);
+            y = AddSep(y, w);
+            y = AddRow("Salir", false, () => { Close(); _app.ExitApp(); }, y, w);
+
+            ClientSize = new Size(w, y + 6);
+        }
+
+        int AddRow(string text, bool active, Action onClick, int y, int w)
+        {
+            var b = new Button
+            {
+                Text = (active ? "●   " : "        ") + text, // bolita naranja si esta activo
+                Left = 6, Top = y, Width = w - 12, Height = 32,
+                FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Theme.Bg, ForeColor = active ? Theme.Accent : Theme.Text,
+                Padding = new Padding(8, 0, 0, 0), TabStop = false, Cursor = Cursors.Hand
+            };
+            b.FlatAppearance.BorderSize = 0;
+            b.FlatAppearance.MouseOverBackColor = Theme.Hover;
+            b.Click += (s, e) => onClick();
+            Controls.Add(b);
+            return y + 32;
+        }
+
+        int AddSep(int y, int w)
+        {
+            Controls.Add(new Panel { Left = 12, Top = y + 4, Width = w - 24, Height = 1, BackColor = Theme.Border });
+            return y + 9;
+        }
+
+        public void ShowAtCursor()
+        {
+            var wa = Screen.FromPoint(Cursor.Position).WorkingArea;
+            var p = Cursor.Position;
+            int x = p.X - Width, yy = p.Y - Height; // ancla la esquina al cursor (bandeja, abajo-derecha)
+            if (x < wa.Left) x = wa.Left;
+            if (x + Width > wa.Right) x = wa.Right - Width;
+            if (yy < wa.Top) yy = wa.Top;
+            if (yy + Height > wa.Bottom) yy = wa.Bottom - Height;
+            Location = new Point(x, yy);
+            Show();
+            SetForegroundWindow(Handle); // sin esto, el cierre al clic-afuera (Deactivate) no dispara
+            Activate();
+        }
+
+        protected override void OnDeactivate(EventArgs e) { base.OnDeactivate(e); Close(); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            using (var pen = new Pen(Theme.Accent))
+                e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+        }
+    }
+
     // -----------------------------------------------------------------------
     //  Tema oscuro
     // -----------------------------------------------------------------------
@@ -816,67 +831,83 @@ namespace NvidiaCS2Toggle
         }
     }
 
-    // Colores oscuros para el ContextMenuStrip de la bandeja.
-    class DarkMenuColors : ProfessionalColorTable
-    {
-        public override Color ToolStripDropDownBackground { get { return Theme.Panel; } }
-        public override Color ImageMarginGradientBegin { get { return Theme.Panel; } }
-        public override Color ImageMarginGradientMiddle { get { return Theme.Panel; } }
-        public override Color ImageMarginGradientEnd { get { return Theme.Panel; } }
-        public override Color MenuItemSelected { get { return Theme.Accent; } }
-        public override Color MenuItemSelectedGradientBegin { get { return Theme.Accent; } }
-        public override Color MenuItemSelectedGradientEnd { get { return Theme.Accent; } }
-        public override Color MenuItemBorder { get { return Theme.Accent; } }
-        public override Color MenuBorder { get { return Theme.Border; } }
-        public override Color SeparatorDark { get { return Theme.Border; } }
-        public override Color CheckBackground { get { return Theme.Accent; } }
-        public override Color CheckSelectedBackground { get { return Theme.AccentH; } }
-    }
-
     // -----------------------------------------------------------------------
     //  Ventana de configuracion (tema oscuro, sin chrome nativo)
     // -----------------------------------------------------------------------
     class SettingsForm : Form
     {
-        ComboBox _cRes, _nRes;
+        ComboBox _mon, _cRes, _nRes;
         Slider _cVib, _nVib;
+        readonly List<MonitorInfo> _monitors;
 
         [DllImport("user32.dll")] static extern bool ReleaseCapture();
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
         const int WM_NCLBUTTONDOWN = 0xA1, HTCAPTION = 0x2;
 
-        public SettingsForm(string device)
+        public SettingsForm()
         {
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Theme.Bg;
             ForeColor = Theme.Text;
             Font = new Font("Segoe UI", 9f);
-            ClientSize = new Size(320, 300);
+            ClientSize = new Size(320, 362);
             Padding = new Padding(1); // espacio para el borde de acento
 
             BuildTitleBar();
 
-            var resolutions = Display.GetSupportedResolutions(device);
+            _monitors = Display.EnumerateMonitors();
 
-            AddHeader("Modo CS2", 50);
-            AddLabel("Resolucion", 16, 78);
-            _cRes = AddCombo(110, 74, resolutions, Settings.Cs2W, Settings.Cs2H);
-            AddLabel("Vibrance", 16, 110);
-            _cVib = AddVib(90, 104, Settings.Cs2Vib);
+            AddHeader("Monitor de juego", 50);
+            _mon = MakeCombo(16, 76, 288);
+            for (int i = 0; i < _monitors.Count; i++)
+                _mon.Items.Add((i + 1) + ". " + _monitors[i].Friendly + (_monitors[i].Primary ? "  (principal)" : ""));
+            _mon.SelectedIndexChanged += (s, e) => OnMonitorChanged();
 
-            AddHeader("Modo Normal", 158);
-            AddLabel("Resolucion", 16, 186);
-            _nRes = AddCombo(110, 182, resolutions, Settings.NorW, Settings.NorH);
-            AddLabel("Vibrance", 16, 218);
-            _nVib = AddVib(90, 212, Settings.NorVib);
+            AddHeader("Modo CS2", 116);
+            AddLabel("Resolucion", 16, 144);
+            _cRes = MakeCombo(110, 140, 150);
+            AddLabel("Vibrance", 16, 176);
+            _cVib = AddVib(90, 170, Settings.Cs2Vib);
+
+            AddHeader("Modo Normal", 218);
+            AddLabel("Resolucion", 16, 246);
+            _nRes = MakeCombo(110, 242, 150);
+            AddLabel("Vibrance", 16, 278);
+            _nVib = AddVib(90, 272, Settings.NorVib);
 
             var ok = MakeButton("Guardar", DialogResult.OK, true);
-            ok.Left = 138; ok.Top = 258; ok.Click += (s, e) => SaveAll();
+            ok.Left = 138; ok.Top = 320; ok.Click += (s, e) => SaveAll();
             var cancel = MakeButton("Cancelar", DialogResult.Cancel, false);
-            cancel.Left = 226; cancel.Top = 258;
+            cancel.Left = 226; cancel.Top = 320;
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
+
+            // Selecciona el monitor de juego actual; eso dispara la carga de resoluciones.
+            string dev = Game.Device(_monitors);
+            int idx = 0;
+            for (int i = 0; i < _monitors.Count; i++) if (_monitors[i].Device == dev) idx = i;
+            if (_monitors.Count > 0) _mon.SelectedIndex = idx; else OnMonitorChanged();
+        }
+
+        void OnMonitorChanged()
+        {
+            int i = _mon.SelectedIndex;
+            string dev = (i >= 0 && i < _monitors.Count) ? _monitors[i].Device : null;
+            if (dev != null) { Settings.GameMonitor = dev; Settings.Save(); }
+            var res = Display.GetSupportedResolutions(dev);
+            FillRes(_cRes, res, Settings.Cs2W, Settings.Cs2H);
+            FillRes(_nRes, res, Settings.NorW, Settings.NorH);
+        }
+
+        void FillRes(ComboBox c, List<string> items, int w, int h)
+        {
+            c.Items.Clear();
+            c.Items.AddRange(items.ToArray());
+            string cur = w + "x" + h;
+            if (!c.Items.Contains(cur)) c.Items.Insert(0, cur); // conserva el valor guardado aunque no se liste
+            c.SelectedItem = cur;
+            if (c.SelectedIndex < 0 && c.Items.Count > 0) c.SelectedIndex = 0;
         }
 
         void BuildTitleBar()
@@ -919,16 +950,11 @@ namespace NvidiaCS2Toggle
             Controls.Add(new Label { Text = text, Left = x, Top = y, AutoSize = true, ForeColor = Theme.Text });
         }
 
-        ComboBox AddCombo(int x, int y, List<string> items, int w, int h)
+        ComboBox MakeCombo(int x, int y, int width)
         {
-            var c = new ComboBox { Left = x, Top = y, Width = 150, DropDownStyle = ComboBoxStyle.DropDownList,
+            var c = new ComboBox { Left = x, Top = y, Width = width, DropDownStyle = ComboBoxStyle.DropDownList,
                                    FlatStyle = FlatStyle.Flat, BackColor = Theme.Panel, ForeColor = Theme.Text,
                                    DrawMode = DrawMode.OwnerDrawFixed };
-            c.Items.AddRange(items.ToArray());
-            string cur = w + "x" + h;
-            if (!c.Items.Contains(cur)) c.Items.Insert(0, cur); // conserva el valor guardado aunque no se liste
-            c.SelectedItem = cur;
-            if (c.SelectedIndex < 0 && c.Items.Count > 0) c.SelectedIndex = 0;
             c.DrawItem += (s, e) =>
             {
                 bool sel = (e.State & DrawItemState.Selected) != 0;
