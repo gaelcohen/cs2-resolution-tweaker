@@ -761,14 +761,14 @@ namespace NvidiaCS2Toggle
     // -----------------------------------------------------------------------
     static class Theme
     {
-        public static readonly Color Bg      = Color.FromArgb(30, 30, 30);
-        public static readonly Color Panel   = Color.FromArgb(45, 45, 48);
-        public static readonly Color Text    = Color.FromArgb(222, 222, 222);
-        public static readonly Color Accent  = Color.FromArgb(255, 140, 0);   // naranja
-        public static readonly Color AccentH = Color.FromArgb(255, 165, 40);
-        public static readonly Color Border  = Color.FromArgb(63, 63, 70);
-        public static readonly Color Hover   = Color.FromArgb(58, 58, 61);
-        public static readonly Color Track   = Color.FromArgb(74, 74, 74);
+        public static readonly Color Bg      = Color.FromArgb(0, 42, 92);     // azul oscuro (variante de 00428b)
+        public static readonly Color Panel   = Color.FromArgb(0, 66, 139);    // 00428b
+        public static readonly Color Text    = Color.FromArgb(230, 238, 247);
+        public static readonly Color Accent  = Color.FromArgb(248, 157, 28);  // f89d1c
+        public static readonly Color AccentH = Color.FromArgb(255, 181, 71);
+        public static readonly Color Border  = Color.FromArgb(30, 91, 168);
+        public static readonly Color Hover   = Color.FromArgb(10, 79, 158);
+        public static readonly Color Track   = Color.FromArgb(20, 54, 95);
     }
 
     // Slider 0-100 dibujado a mano (el TrackBar nativo no se puede tematizar).
