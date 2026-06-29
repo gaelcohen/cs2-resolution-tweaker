@@ -589,6 +589,10 @@ namespace NvidiaCS2Toggle
             _menu.Items.Add(new ToolStripSeparator());
             _menu.Items.Add("Salir", null, (s, e) => Exit());
 
+            _menu.Renderer = new ToolStripProfessionalRenderer(new DarkMenuColors());
+            _menu.BackColor = Theme.Panel;
+            _menu.ForeColor = Theme.Text;
+
             _menu.Opening += (s, e) => RebuildMenu();
 
             _icon = new NotifyIcon
@@ -750,69 +754,211 @@ namespace NvidiaCS2Toggle
     //  Ventana de configuracion (resolucion + vibrance de cada perfil).
     //  Monitor e "Iniciar con Windows" se eligen desde el menu de la bandeja.
     // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    //  Tema oscuro
+    // -----------------------------------------------------------------------
+    static class Theme
+    {
+        public static readonly Color Bg      = Color.FromArgb(30, 30, 30);
+        public static readonly Color Panel   = Color.FromArgb(45, 45, 48);
+        public static readonly Color Text    = Color.FromArgb(222, 222, 222);
+        public static readonly Color Accent  = Color.FromArgb(118, 185, 0);   // verde NVIDIA
+        public static readonly Color AccentH = Color.FromArgb(140, 210, 20);
+        public static readonly Color Border  = Color.FromArgb(63, 63, 70);
+        public static readonly Color Hover   = Color.FromArgb(58, 58, 61);
+        public static readonly Color Track   = Color.FromArgb(74, 74, 74);
+    }
+
+    // Slider 0-100 dibujado a mano (el TrackBar nativo no se puede tematizar).
+    class Slider : Control
+    {
+        public int Minimum = 0, Maximum = 100;
+        int _value;
+        public event EventHandler ValueChanged;
+
+        public int Value
+        {
+            get { return _value; }
+            set
+            {
+                int v = value < Minimum ? Minimum : (value > Maximum ? Maximum : value);
+                if (v == _value) return;
+                _value = v; Invalidate();
+                if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public Slider()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            Height = 24;
+        }
+
+        void SetFromX(int x)
+        {
+            float t = (float)(x - 8) / Math.Max(1, Width - 16);
+            Value = Minimum + (int)Math.Round(t * (Maximum - Minimum));
+        }
+        protected override void OnMouseDown(MouseEventArgs e) { Focus(); SetFromX(e.X); Capture = true; }
+        protected override void OnMouseMove(MouseEventArgs e) { if (e.Button == MouseButtons.Left) SetFromX(e.X); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            int cy = Height / 2, x0 = 8, x1 = Width - 8;
+            using (var p = new Pen(Theme.Track, 4f)) g.DrawLine(p, x0, cy, x1, cy);
+            float t = (float)(_value - Minimum) / Math.Max(1, Maximum - Minimum);
+            int kx = x0 + (int)(t * (x1 - x0));
+            using (var p = new Pen(Theme.Accent, 4f)) g.DrawLine(p, x0, cy, kx, cy);
+            using (var b = new SolidBrush(Theme.Accent)) g.FillEllipse(b, kx - 7, cy - 7, 14, 14);
+        }
+    }
+
+    // Colores oscuros para el ContextMenuStrip de la bandeja.
+    class DarkMenuColors : ProfessionalColorTable
+    {
+        public override Color ToolStripDropDownBackground { get { return Theme.Panel; } }
+        public override Color ImageMarginGradientBegin { get { return Theme.Panel; } }
+        public override Color ImageMarginGradientMiddle { get { return Theme.Panel; } }
+        public override Color ImageMarginGradientEnd { get { return Theme.Panel; } }
+        public override Color MenuItemSelected { get { return Theme.Accent; } }
+        public override Color MenuItemSelectedGradientBegin { get { return Theme.Accent; } }
+        public override Color MenuItemSelectedGradientEnd { get { return Theme.Accent; } }
+        public override Color MenuItemBorder { get { return Theme.Accent; } }
+        public override Color MenuBorder { get { return Theme.Border; } }
+        public override Color SeparatorDark { get { return Theme.Border; } }
+        public override Color CheckBackground { get { return Theme.Accent; } }
+        public override Color CheckSelectedBackground { get { return Theme.AccentH; } }
+    }
+
+    // -----------------------------------------------------------------------
+    //  Ventana de configuracion (tema oscuro, sin chrome nativo)
+    // -----------------------------------------------------------------------
     class SettingsForm : Form
     {
         ComboBox _cRes, _nRes;
-        TrackBar _cVib, _nVib;
+        Slider _cVib, _nVib;
+
+        [DllImport("user32.dll")] static extern bool ReleaseCapture();
+        [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+        const int WM_NCLBUTTONDOWN = 0xA1, HTCAPTION = 0x2;
 
         public SettingsForm(string device)
         {
-            Text = "Configuracion - CS2 Res Tweaker";
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
-            MaximizeBox = false; MinimizeBox = false;
-            ClientSize = new Size(330, 285);
+            BackColor = Theme.Bg;
+            ForeColor = Theme.Text;
+            Font = new Font("Segoe UI", 9f);
+            ClientSize = new Size(320, 300);
+            Padding = new Padding(1); // espacio para el borde de acento
+
+            BuildTitleBar();
 
             var resolutions = Display.GetSupportedResolutions(device);
 
-            AddLabel("Modo CS2", 12, 12, true);
-            AddLabel("Resolucion:", 12, 40);
-            _cRes = AddCombo(110, 36, resolutions, Settings.Cs2W, Settings.Cs2H);
-            AddLabel("Vibrance:", 12, 72);
-            _cVib = AddVib(80, 68, Settings.Cs2Vib);
+            AddHeader("Modo CS2", 50);
+            AddLabel("Resolucion", 16, 78);
+            _cRes = AddCombo(110, 74, resolutions, Settings.Cs2W, Settings.Cs2H);
+            AddLabel("Vibrance", 16, 110);
+            _cVib = AddVib(90, 104, Settings.Cs2Vib);
 
-            AddLabel("Modo Normal", 12, 142, true);
-            AddLabel("Resolucion:", 12, 170);
-            _nRes = AddCombo(110, 166, resolutions, Settings.NorW, Settings.NorH);
-            AddLabel("Vibrance:", 12, 202);
-            _nVib = AddVib(80, 198, Settings.NorVib);
+            AddHeader("Modo Normal", 158);
+            AddLabel("Resolucion", 16, 186);
+            _nRes = AddCombo(110, 182, resolutions, Settings.NorW, Settings.NorH);
+            AddLabel("Vibrance", 16, 218);
+            _nVib = AddVib(90, 212, Settings.NorVib);
 
-            var ok = new Button { Text = "Guardar", Left = 145, Top = 250, Width = 80, DialogResult = DialogResult.OK };
-            ok.Click += (s, e) => SaveAll();
-            var cancel = new Button { Text = "Cancelar", Left = 233, Top = 250, Width = 80, DialogResult = DialogResult.Cancel };
+            var ok = MakeButton("Guardar", DialogResult.OK, true);
+            ok.Left = 138; ok.Top = 258; ok.Click += (s, e) => SaveAll();
+            var cancel = MakeButton("Cancelar", DialogResult.Cancel, false);
+            cancel.Left = 226; cancel.Top = 258;
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
         }
 
-        void AddLabel(string text, int x, int y, bool bold = false)
+        void BuildTitleBar()
         {
-            var l = new Label { Text = text, Left = x, Top = y, AutoSize = true };
-            if (bold) l.Font = new Font(l.Font, FontStyle.Bold);
-            Controls.Add(l);
+            var bar = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = Theme.Panel };
+            var title = new Label { Text = "CS2 Res Tweaker", AutoSize = true, ForeColor = Theme.Text,
+                                    Left = 12, Top = 9, Font = new Font("Segoe UI", 10f, FontStyle.Bold) };
+            var close = new Label { Text = "X", AutoSize = false, Width = 36, Height = 36, Dock = DockStyle.Right,
+                                    TextAlign = ContentAlignment.MiddleCenter, ForeColor = Theme.Text, Cursor = Cursors.Hand };
+            close.MouseEnter += (s, e) => { close.BackColor = Color.FromArgb(200, 50, 50); close.ForeColor = Color.White; };
+            close.MouseLeave += (s, e) => { close.BackColor = Theme.Panel; close.ForeColor = Theme.Text; };
+            close.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
+
+            EventHandler<MouseEventArgs> drag = (s, e) =>
+            {
+                if (e.Button == MouseButtons.Left) { ReleaseCapture(); SendMessage(Handle, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero); }
+            };
+            bar.MouseDown += (s, e) => drag(s, e);
+            title.MouseDown += (s, e) => drag(s, e);
+
+            bar.Controls.Add(title); bar.Controls.Add(close);
+            Controls.Add(bar);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            using (var p = new Pen(Theme.Border)) // borde 1px alrededor
+                e.Graphics.DrawRectangle(p, 0, 0, Width - 1, Height - 1);
+        }
+
+        void AddHeader(string text, int y)
+        {
+            Controls.Add(new Label { Text = text, Left = 14, Top = y, AutoSize = true,
+                ForeColor = Theme.Accent, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold) });
+        }
+
+        void AddLabel(string text, int x, int y)
+        {
+            Controls.Add(new Label { Text = text, Left = x, Top = y, AutoSize = true, ForeColor = Theme.Text });
         }
 
         ComboBox AddCombo(int x, int y, List<string> items, int w, int h)
         {
-            var c = new ComboBox { Left = x, Top = y, Width = 130, DropDownStyle = ComboBoxStyle.DropDownList };
+            var c = new ComboBox { Left = x, Top = y, Width = 150, DropDownStyle = ComboBoxStyle.DropDownList,
+                                   FlatStyle = FlatStyle.Flat, BackColor = Theme.Panel, ForeColor = Theme.Text,
+                                   DrawMode = DrawMode.OwnerDrawFixed };
             c.Items.AddRange(items.ToArray());
             string cur = w + "x" + h;
             if (!c.Items.Contains(cur)) c.Items.Insert(0, cur); // conserva el valor guardado aunque no se liste
             c.SelectedItem = cur;
             if (c.SelectedIndex < 0 && c.Items.Count > 0) c.SelectedIndex = 0;
+            c.DrawItem += (s, e) =>
+            {
+                bool sel = (e.State & DrawItemState.Selected) != 0;
+                using (var bg = new SolidBrush(sel ? Theme.Accent : Theme.Panel)) e.Graphics.FillRectangle(bg, e.Bounds);
+                if (e.Index >= 0)
+                    using (var tb = new SolidBrush(sel ? Color.Black : Theme.Text))
+                        e.Graphics.DrawString(c.Items[e.Index].ToString(), c.Font, tb, e.Bounds.Left + 2, e.Bounds.Top + 1);
+            };
             Controls.Add(c);
             return c;
         }
 
-        // Barra 0-100 con su valor numerico al lado, actualizado en vivo.
-        TrackBar AddVib(int x, int y, int val)
+        Slider AddVib(int x, int y, int val)
         {
-            if (val < 0) val = 0; if (val > 100) val = 100;
-            var t = new TrackBar { Left = x, Top = y, Width = 180, Minimum = 0, Maximum = 100,
-                                   Value = val, TickFrequency = 10 };
-            var num = new Label { Left = x + 185, Top = y + 5, AutoSize = true, Text = val.ToString() };
+            var t = new Slider { Left = x, Top = y, Width = 170, Value = val };
+            var num = new Label { Left = x + 178, Top = y + 4, AutoSize = true, ForeColor = Theme.Accent,
+                                  Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Text = val.ToString() };
             t.ValueChanged += (s, e) => num.Text = t.Value.ToString();
             Controls.Add(t); Controls.Add(num);
             return t;
+        }
+
+        Button MakeButton(string text, DialogResult dr, bool accent)
+        {
+            var b = new Button { Text = text, FlatStyle = FlatStyle.Flat, DialogResult = dr, Width = 80, Height = 28,
+                                 BackColor = accent ? Theme.Accent : Theme.Panel,
+                                 ForeColor = accent ? Color.Black : Theme.Text };
+            b.FlatAppearance.BorderColor = accent ? Theme.Accent : Theme.Border;
+            b.FlatAppearance.MouseOverBackColor = accent ? Theme.AccentH : Theme.Hover;
+            return b;
         }
 
         static void ParseRes(ComboBox c, out int w, out int h)
